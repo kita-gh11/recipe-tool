@@ -124,28 +124,38 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
     <div class="pw-title">YouTubeレシピツール</div>
     <div class="pw-sub">合言葉を入力してください</div>
     <input class="pw-input" id="pw-input" type="password" placeholder="合言葉" autocomplete="off">
-    <button class="pw-btn" onclick="checkPw()">入る</button>
+    <button class="pw-btn" id="pw-btn-el" onclick="checkPw()">入る</button>
     <div class="pw-error" id="pw-error"></div>
   </div>
 </div>
 <script>
 (function(){
-  if(sessionStorage.getItem('recipe_auth')==='ok'){
-    document.getElementById('pw-screen').style.display='none';
-  }
+  try{
+    if(sessionStorage.getItem('recipe_auth')==='ok'){
+      document.getElementById('pw-screen').style.display='none';
+    }
+  }catch(e){}
 })();
 function checkPw(){
-  var v=document.getElementById('pw-input').value;
-  if(v==='recipe2026'){
-    sessionStorage.setItem('recipe_auth','ok');
-    document.getElementById('pw-screen').style.display='none';
-  } else {
-    document.getElementById('pw-error').textContent='合言葉が違います';
-    document.getElementById('pw-input').value='';
-    document.getElementById('pw-input').focus();
+  try{
+    var v=document.getElementById('pw-input').value.trim();
+    if(v==='recipe2026'){
+      try{sessionStorage.setItem('recipe_auth','ok');}catch(e){}
+      document.getElementById('pw-screen').style.display='none';
+    } else {
+      document.getElementById('pw-error').textContent='合言葉が違います';
+      document.getElementById('pw-input').value='';
+    }
+  }catch(e){
+    alert('エラー:'+e);
   }
 }
-document.getElementById('pw-input').addEventListener('keydown',function(e){if(e.key==='Enter')checkPw();});
+document.addEventListener('DOMContentLoaded',function(){
+  var btn=document.getElementById('pw-btn-el');
+  if(btn) btn.addEventListener('touchend',function(e){e.preventDefault();checkPw();});
+  var inp=document.getElementById('pw-input');
+  if(inp) inp.addEventListener('keydown',function(e){if(e.key==='Enter')checkPw();});
+});
 </script>
 <div class="header">
   <h1>YouTubeレシピツール</h1>
