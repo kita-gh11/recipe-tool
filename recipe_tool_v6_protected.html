@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="レシピツール">
+<title>YouTubeレシピツール</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;background:#faf6f0;color:#2c1810;min-height:100vh}
+.header{background:linear-gradient(135deg,#3b2314 0%,#5c3520 100%);padding:18px 20px 16px;position:sticky;top:0;z-index:10;box-shadow:0 2px 12px rgba(0,0,0,0.3);text-align:center}
+.header h1{font-size:26px;font-weight:700;color:#f5e6c8;letter-spacing:0.5px}
+.header p{font-size:11px;color:rgba(245,230,200,0.9);margin-top:3px}
+.tabs{display:flex;background:#fff;border-bottom:2px solid #ede3d5;padding:10px 12px 0;gap:8px;position:sticky;top:62px;z-index:9}
+.tab{flex:1;padding:12px 8px;font-size:16px;font-weight:600;color:#bbb;cursor:pointer;border:2px solid #e8e0d8;border-bottom:none;border-radius:10px 10px 0 0;text-align:center;white-space:nowrap;transition:all 0.2s;-webkit-tap-highlight-color:transparent;background:#f5f0eb}
+.tab.active{font-weight:700;background:#fff;border-bottom:2px solid #fff;margin-bottom:-2px}
+.tab-dot{display:none}
+.dot-pro{background:#c8922a}.dot-easy{background:#7a9e7e}.dot-buy{background:#8b7355}
+.tab-pro.active{color:#c8922a;border-color:#c8922a}
+.tab-easy.active{color:#7a9e7e;border-color:#7a9e7e}
+.tab-buy.active{color:#8b7355;border-color:#8b7355}
+.content{padding:12px 12px 24px;max-width:680px;margin:0 auto}
+.list{display:flex;flex-direction:column;gap:6px}
+.subcat-label{display:flex;align-items:center;gap:8px;font-size:28px;font-weight:800;color:#3b2314;padding:20px 2px 10px;margin-top:4px}
+.subcat-label:first-child{padding-top:6px;margin-top:0}
+.subcat-label .cat-emoji{font-size:24px;line-height:1}
+.subcat-label .cat-text{}
+.recipe-row{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);transition:box-shadow 0.2s}
+.recipe-row.open{box-shadow:0 4px 14px rgba(0,0,0,0.11)}
+.row-header{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;gap:10px}
+.row-left{display:flex;align-items:center;gap:9px;flex:1;min-width:0}
+.row-emoji{font-size:19px;flex-shrink:0;line-height:1}
+.row-name{font-size:17px;font-weight:600;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-right{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.has-video{width:20px;height:14px;background:#FF0000;border-radius:3px;display:inline-flex;align-items:center;justify-content:center}
+.has-video svg{width:9px;height:9px;fill:white}
+.arrow{font-size:17px;color:#ccc;transition:transform 0.2s}
+.recipe-row.open .arrow{transform:rotate(90deg);color:#c8922a}
+.detail{display:none;padding:0 14px 14px}
+.recipe-row.open .detail{display:block}
+.detail-divider{height:1px;background:#ede3d5;margin-bottom:12px}
+.section-title{font-size:22px;font-weight:800;color:#3b2314;margin-bottom:10px;letter-spacing:0.03em;border-left:4px solid #c8922a;padding-left:8px}
+.ing-list{list-style:none;margin-bottom:12px;background:#faf6f0;border-radius:10px;overflow:hidden}
+.ing-list li{font-size:16px;color:#2c1810;padding:10px 12px;border-bottom:1px solid #ede3d5;display:flex;align-items:center;gap:10px}
+.ing-list li:last-child{border-bottom:none}
+.ing-qty{color:#999;flex-shrink:0;font-weight:500;margin-left:auto}
+.ing-cb{width:20px;height:20px;cursor:pointer;flex-shrink:0;appearance:none;-webkit-appearance:none;border:2px solid #ddd;border-radius:5px;background:#fff;position:relative;transition:all 0.15s}
+.ing-cb:checked{background:#c8922a;border-color:#c8922a}
+.ing-cb:checked::after{content:'✓';position:absolute;top:50%;left:50%;transform:translate(-50%,-54%);color:#fff;font-size:13px;font-weight:700;line-height:1}
+.ing-name-text{flex:1}
+.ing-list li.checked .ing-name-text{text-decoration:line-through;color:#bbb}
+.ing-list li.checked .ing-qty{color:#ccc}
+.cart-btn{display:flex;align-items:center;gap:8px;margin:10px 0 14px;background:#fdf5e8;border:1.5px solid #c8922a;color:#c8922a;font-size:16px;font-weight:700;padding:9px 16px;border-radius:10px;cursor:pointer;width:100%}
+.cart-btn:active{background:#c8922a;color:#fff}
+.no-ing{font-size:16px;color:#aaa;margin-bottom:12px;padding:8px 0}
+.video-link-btn{display:inline-flex;align-items:center;gap:8px;background:#FF0000;color:#fff;text-decoration:none;padding:11px 20px;border-radius:10px;font-size:16px;font-weight:600;box-shadow:0 2px 8px rgba(255,0,0,0.25)}
+.video-link-btn svg{width:10px;height:10px;fill:white;flex-shrink:0}
+.divider{height:1px;background:#f0ebe5;margin:10px 0}
+.steps-box{background:#faf6f0;border-radius:10px;padding:12px 14px;margin-bottom:12px}
+.step-list{list-style:none;counter-reset:s}
+.step-list li{font-size:16px;color:#1a1a1a;padding:9px 0 9px 32px;position:relative;border-bottom:1px solid #ece8e3;line-height:1.7}
+.step-list li:last-child{border-bottom:none}
+.step-list li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:9px;width:22px;height:22px;background:#c8922a;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+.empty-tab{text-align:center;padding:40px 20px;color:#bbb;font-size:14px}
+.search-bar{background:#fff;border-bottom:1px solid #f0ebe5;padding:10px 16px}
+.search-input-wrap{display:flex;align-items:center;background:#faf7f4;border-radius:12px;padding:9px 13px;gap:8px}
+.search-input-wrap svg{flex-shrink:0;color:#888}
+.search-input{flex:1;border:none;background:none;font-size:16px;color:#1a1a1a;outline:none}
+.search-input::placeholder{color:#888}
+.search-clear{border:none;background:none;color:#bbb;cursor:pointer;font-size:16px;padding:0 2px;line-height:1}
+.search-results{padding:12px 12px 24px;max-width:680px;margin:0 auto}
+.search-result-label{font-size:12px;font-weight:700;color:#999;margin-bottom:8px;padding:0 4px;letter-spacing:0.04em}
+.search-cat-badge{font-size:11px;padding:2px 8px;border-radius:10px;margin-left:6px;font-weight:600}
+.badge-pro-s{background:#fff0ea;color:#d94400}
+.badge-easy-s{background:#e8f8ee;color:#1a8040}
+.badge-buy-s{background:#e6f1fb;color:#185fa5}
+.ing-hit{background:#fffbe6}
+.cat-nav{background:#fff;border-bottom:1px solid #f0ebe5;padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px}
+.cat-nav-btn{display:inline-block;font-size:15px;font-weight:600;padding:8px 16px;border-radius:20px;border:1.5px solid #e8e0d8;background:#fff;color:#888;cursor:pointer;margin-right:6px;-webkit-tap-highlight-color:transparent;transition:all 0.15s}
+.cat-nav-btn:last-child{margin-right:0}
+.cat-nav-btn.active{background:#3b2314;color:#f5e6c8;border-color:#3b2314}
+/* お気に入り */
+.fav-btn{background:none;border:none;font-size:18px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0;opacity:0.35;transition:opacity 0.15s,transform 0.15s;-webkit-tap-highlight-color:transparent}
+.fav-btn.active{opacity:1}
+.fav-btn:active{transform:scale(1.3)}
+.fav-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#fff;border-bottom:1px solid #f0ebe5}
+.fav-toggle{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:#aaa;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;background:#f5f0eb;border:2px solid #e8e0d8;border-radius:24px;padding:10px 18px;transition:all 0.2s}
+.fav-toggle.active{color:#c0694a;background:#fff0eb;border-color:#e8a0b0}
+.fav-count{font-size:11px;background:#c8922a;color:#fff;border-radius:10px;padding:1px 7px;font-weight:700}
+/* ランダム */
+.random-fab{position:fixed;bottom:24px;right:18px;z-index:50;background:linear-gradient(135deg,#3b2314,#5c3520);color:#f5e6c8;border:none;border-radius:50px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.3);display:flex;align-items:center;gap:7px;-webkit-tap-highlight-color:transparent;transition:transform 0.1s}
+.random-fab:active{transform:scale(0.95)}
+/* ランダムモーダル */
+.random-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;padding:20px}
+.random-modal-overlay.show{display:flex}
+.random-modal{background:#fff;border-radius:20px;width:100%;max-width:420px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.2)}
+.random-modal-top{background:linear-gradient(135deg,#3b2314,#5c3520);padding:20px;text-align:center}
+.random-modal-top .r-emoji{font-size:48px;display:block;margin-bottom:8px}
+.random-modal-top .r-title{font-size:20px;font-weight:700;color:#fff;line-height:1.3}
+.random-modal-top .r-cat{font-size:12px;color:rgba(255,255,255,0.8);margin-top:4px}
+.random-modal-body{padding:16px 20px 20px}
+.random-btns{display:flex;gap:10px;margin-top:14px}
+.random-btns a{flex:1;text-align:center;padding:11px;border-radius:10px;font-size:15px;font-weight:600;text-decoration:none;background:#FF0000;color:#fff}
+.random-btns button{flex:1;padding:11px;border-radius:10px;font-size:15px;font-weight:600;border:2px solid #f0ebe5;background:#fff;color:#555;cursor:pointer}
+.random-close{display:block;text-align:center;margin-top:12px;font-size:15px;color:#bbb;cursor:pointer;-webkit-tap-highlight-color:transparent}
+/* パスワード画面 */
+#pw-screen{position:fixed;inset:0;background:#faf6f0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
+.pw-box{background:#fff;border-radius:20px;padding:36px 28px;max-width:360px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,0.12);text-align:center}
+.pw-logo{font-size:48px;margin-bottom:16px}
+.pw-title{font-size:22px;font-weight:800;color:#3b2314;margin-bottom:6px}
+.pw-sub{font-size:14px;color:#999;margin-bottom:28px}
+.pw-input{width:100%;font-size:18px;padding:14px 16px;border:2px solid #e8e0d8;border-radius:12px;outline:none;text-align:center;color:#2c1810;background:#faf6f0;-webkit-appearance:none}
+.pw-input:focus{border-color:#c8922a}
+.pw-btn{width:100%;margin-top:14px;padding:15px;background:linear-gradient(135deg,#3b2314,#5c3520);color:#f5e6c8;font-size:17px;font-weight:700;border:none;border-radius:12px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.pw-btn:active{opacity:0.85}
+.pw-error{margin-top:12px;color:#d94400;font-size:14px;font-weight:600;min-height:20px}
+</style>
+</head>
+<body>
+<div id="pw-screen">
+  <div class="pw-box">
+    <div class="pw-logo">🍳</div>
+    <div class="pw-title">YouTubeレシピツール</div>
+    <div class="pw-sub">合言葉を入力してください</div>
+    <input class="pw-input" id="pw-input" type="password" placeholder="合言葉" autocomplete="off">
+    <button class="pw-btn" onclick="checkPw()">入る</button>
+    <div class="pw-error" id="pw-error"></div>
+  </div>
+</div>
+<script>
+(function(){
+  if(sessionStorage.getItem('recipe_auth')==='ok'){
+    document.getElementById('pw-screen').style.display='none';
+  }
+})();
+function checkPw(){
+  var v=document.getElementById('pw-input').value;
+  if(v==='recipe2026'){
+    sessionStorage.setItem('recipe_auth','ok');
+    document.getElementById('pw-screen').style.display='none';
+  } else {
+    document.getElementById('pw-error').textContent='合言葉が違います';
+    document.getElementById('pw-input').value='';
+    document.getElementById('pw-input').focus();
+  }
+}
+document.getElementById('pw-input').addEventListener('keydown',function(e){if(e.key==='Enter')checkPw();});
+</script>
+<div class="header">
+  <h1>YouTubeレシピツール</h1>
+  <p>料理名をタップすると材料・動画が開きます</p>
+</div>
+<div class="search-bar">
+  <div class="search-input-wrap">
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="#aaa" stroke-width="1.5"/><line x1="10.5" y1="10.5" x2="14" y2="14" stroke="#aaa" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <input class="search-input" id="search-input" type="text" inputmode="search" enterkeyhint="search" placeholder="つかいたい食材は？..." oninput="onSearch(this.value)">
+    <button class="search-clear" id="search-clear" onclick="clearSearch()" style="display:none">✕</button>
+    <button onclick="onSearch(document.getElementById('search-input').value)" style="background:#3b2314;color:#f5e6c8;border:none;border-radius:8px;padding:6px 14px;font-size:15px;font-weight:700;cursor:pointer;flex-shrink:0">検索</button>
+  </div>
+</div>
+<div class="tabs">
+  <div class="tab tab-pro active" onclick="switchTab('pro',this)">本格レシピ</div>
+  <div class="tab tab-easy" onclick="switchTab('easy',this)">お手軽レシピ</div>
+  <div class="tab tab-buy" onclick="switchTab('buy',this)">買うだけ/外食</div>
+</div>
+<div class="cat-nav" id="cat-nav"></div>
+<div class="fav-bar" id="fav-bar">
+  <div class="fav-toggle" id="fav-toggle" onclick="toggleFavFilter()">
+    <span>❤️</span><span>お気に入りだけ表示</span>
+  </div>
+  <span class="fav-count" id="fav-count" style="display:none">0</span>
+</div>
+<div class="content" id="main-content">
+  <div id="recipe-list" class="list"></div>
+</div>
+<div class="search-results" id="search-results" style="display:none">
+  <div class="search-result-label" id="search-result-label"></div>
+  <div id="search-list"></div>
+</div>
+<!-- 買い物リストモーダル -->
+<div class="random-modal-overlay" id="cart-overlay" onclick="if(event.target===this)closeCart()" style="display:none;opacity:1">
+  <div class="random-modal" style="max-height:80vh;overflow-y:auto">
+    <div class="random-modal-top" style="padding:16px 20px 12px">
+      <div class="r-title" style="font-size:18px">🛒 買い物リスト</div>
+    </div>
+    <div class="random-modal-body" id="cart-body" style="padding:0 20px 20px;text-align:left"></div>
+  </div>
+</div>
+<!-- 買い物リストFAB -->
+<button class="random-fab" id="cart-fab" onclick="showCart()" style="bottom:80px;background:#edddd4;color:#7a3f28;display:none">🛒 買い物リスト <span id="cart-fab-count" style="background:rgba(255,255,255,0.3);border-radius:10px;padding:1px 7px;font-size:12px">0</span></button>
+<!-- ランダムFAB -->
+<button class="random-fab" onclick="showRandom()">🎲 今日何作ろう</button>
+<!-- ランダムモーダル -->
+<div class="random-modal-overlay" id="random-overlay" onclick="if(event.target===this)closeRandom()">
+  <div class="random-modal">
+    <div class="random-modal-top">
+      <span class="r-emoji" id="r-emoji">🍽️</span>
+      <div class="r-title" id="r-title">レシピ名</div>
+      <div class="r-cat" id="r-cat">カテゴリ</div>
+    </div>
+    <div class="random-modal-body">
+      <div id="r-ing" style="font-size:13px;color:#555;line-height:1.8"></div>
+      <div class="random-btns">
+        <a id="r-yt-btn" href="#" target="_blank">▶ 動画を見る</a>
+        <button onclick="showRandom()">🎲 もう一回</button>
+      </div>
+      <span class="random-close" onclick="closeRandom()">とじる</span>
+    </div>
+  </div>
+</div>
+<script>
+const DATA={
+  pro:{
+    '和食':[
+      {id:'pro86',name:'卵焼き',serv:'2人前',url:'https://www.youtube.com/watch?v=riU45KzKa2c',ing:[['卵','3個'],['水','50cc'],['淡口醤油','小さじ1'],['黒胡椒','少々'],['青ねぎ','3本'],['サラダ油','適量'],['大根（大根おろし用）','適量'],['濃口醤油（仕上げ）','適量']],steps:['卵を溶き、水・淡口醤油・黒胡椒・小口切りの青ねぎを加えて混ぜる','大根をすりおろす','卵焼き器を強火で温めて油をなじませ、濡れ布巾に当てて温度を落ち着かせる','中火にして卵液を流し、大きな泡を潰す','半熟のうちに奥から手前へ三つ折り→二つ折りと徐々に巻いていく','最後の一巻きは弱火で行い、巻きすで形を整える','切り分けて盛り付け、大根おろしを添え濃口醤油をかける']},
+      {id:'pro92',name:'本格だしの味噌汁とおむすび',serv:'3〜4人前',url:'https://www.youtube.com/watch?v=5GuHQQvm0WA',ing:[['昆布','10g'],['鰹節','20g'],['水','1L'],['わかめ（乾燥）','30g'],['長ねぎ','1/2本'],['木綿豆腐','1/3丁'],['だし','600cc'],['味噌','大さじ3'],['みりん','小さじ1'],['醤油','小さじ1'],['粉山椒','少々'],['ご飯','600g'],['海苔','適量'],['塩','少々']],steps:['水と昆布を鍋に入れ約2時間おき、鰹節を加えて中火でゆっくり沸騰させ弱火で約5分煮出す。ペーパータオルを敷いたざるで漉す','わかめを水で戻して3cm幅に切る。長ねぎを小口切りにする','だしを温め、煮立ったら火を弱め、味噌を溶いてみりん・醤油を加える。豆腐を1cm角に切って加え温める','椀にわかめ・長ねぎ・粉山椒を入れ、提供直前に汁を注ぐ','手を約1%の塩水で濡らし、掌に少量の塩をなじませ、具材を入れたご飯を転がすように握る。お好みで海苔を巻く']},
+      {id:'pro93',name:'豚の新生姜焼き',serv:'1〜2人前',url:'https://www.youtube.com/watch?v=LHzmslSJkiM',ing:[['豚こま肉','250g'],['新生姜','40g'],['玉ねぎ','1/2個'],['キャベツ','1/6個'],['サラダ油','大さじ1'],['マヨネーズ','適量'],['砂糖','大さじ1'],['酒','大さじ2'],['醤油','大さじ2.5'],['一味唐辛子','少々']],steps:['生姜を軽く洗い、皮ごとすりおろす','玉ねぎを薄切りにする。キャベツを千切りにして水にさらし冷蔵庫で冷やす','フライパンに油を入れ中火で玉ねぎを炒める','玉ねぎがしんなりしたら豚肉を加えて炒め、火が通ったら砂糖・酒・醤油・一味唐辛子を加えて煮立たせる','最後にすりおろした生姜を加えて絡める','キャベツと豚の生姜焼きを器に盛り、マヨネーズを添える']},
+      {id:'pro3',name:'豚汁',url:'https://www.youtube.com/watch?v=OL8o03u8l2Y',ing:[['豚バラ','280g'],['塩','1つまみ'],['胡椒','適量'],['ごぼう','150g'],['大根','200g'],['こんにゃく','250g'],['にんじん','100g'],['生姜','10g'],['にんにく','2片'],['長ネギ','1本'],['ごま油','大さじ1'],['水','1リットル'],['白だし','大さじ4'],['味噌','大さじ4'],['みりん','大さじ2'],['酒','大さじ2']],steps:['野菜を切る','こんにゃくを切り、ぬるま湯で洗う','フライパンにごま油をひいて野菜を炒める','水を加える','調味料を入れる','にんにく・生姜を加える']},
+      {id:'pro8',name:'肉じゃが',serv:'2〜3人前',url:'https://www.youtube.com/watch?v=h67vdKlPGzg',ing:[['豚バラ','250g'],['じゃがいも','400g'],['人参','300g'],['玉ねぎ','250g'],['白滝','200g'],['生姜','15g'],['ごま油','大さじ1.5'],['塩胡椒','適量'],['醤油','大さじ4（60cc）'],['酒','大さじ6（90cc）'],['白だし','大さじ2'],['砂糖','大さじ2'],['和からし・タバスコ・ラー油','お好みで']],steps:['野菜を洗って切る','肉を切る','白滝をぬるま湯で洗って切る','フライパンにごま油をひく','肉・野菜の順に炒める','調味料を加えて煮込む']},
+      {id:'pro9',name:'キャベツ鍋',url:'https://www.youtube.com/watch?v=FyLCRXMANAM',ing:[['キャベツ','半玉（500g）'],['鶏むね肉','350〜380g'],['水','700cc'],['酒','50cc'],['鶏ガラスープ','大さじ1と1/2'],['鰹節','2g'],['塩','小さじ1/3'],['塩（鶏むね肉用）','2つまみ'],['薄力粉','大さじ2と小さじ1'],['オリーブオイル','適量'],['コショウ','適量'],['柚子胡椒','お好みで']],steps:['鍋にキャベツ・水・酒・鶏ガラスープ・鰹節・塩を入れて煮る','鶏むね肉を削ぎ切りにして塩・薄力粉をはたく','鍋の上に鶏むね肉を乗せて煮る','オリーブオイル・胡椒をかけて完成']},
+      {id:'pro17',name:'チキン南蛮',url:'https://www.youtube.com/watch?v=PuU2XremO58',ing:[['玉ねぎ（タルタル用）','1/8個'],['ピクルス','1本（15g）'],['ゆで卵','1個'],['マヨネーズ','大さじ3'],['ケチャップ（タルタル用）','小さじ1強'],['塩','小さじ1/4'],['黒胡椒','適量'],['玉ねぎ（甘酢用）','1/8個'],['醤油','大さじ1と1/2'],['酢','大さじ1と1/2'],['ケチャップ（甘酢用）','小さじ1'],['砂糖','大さじ1と1/2'],['味の素','4振り'],['鶏もも肉','300〜320g'],['塩胡椒（下味用）','適量'],['小麦粉','大さじ2'],['卵','1個'],['乾燥パセリ','適量']],steps:['【タルタルソース】玉ねぎをスライスとみじん切りにする','ピクルスをみじん切りにする','ゆで卵を作ってみじん切りにする','調味料を加えて混ぜる','【甘酢ダレ】鍋にスライスした玉ねぎを入れる','調味料を加えて火にかけ、とろみをつける','【鶏肉】鶏もも肉を一口大に切る','塩胡椒・小麦粉をつける','溶き卵に入れて馴染ませる','フライパンで揚げる']},
+      {id:'pro7',name:'超絶柔らか鶏むね漬け',url:'https://www.youtube.com/watch?v=b_QxpTyqv2E',ing:[['鶏むね肉','350g'],['長ねぎ','80g'],['塩','小さじ1/2'],['味の素','8振り'],['オイスターソース','小さじ1'],['レモン汁','小さじ1'],['ごま油','大さじ1と1/2'],['砂糖','小さじ1/2'],['黒コショウ','適量'],['塩コショウ','適量'],['酒','大さじ1'],['片栗粉','小さじ4'],['追いレモン','お好みで']],steps:['長ねぎ・塩・味の素・オイスターソース・レモン汁・ごま油・砂糖・黒胡椒を混ぜてネギだれを作る','鶏むね肉に塩コショウ・酒・片栗粉を揉み込む','さっと茹でてザルで水気を切る','ネギだれと絡めて完成']},
+      {id:'pro24',name:'白菜漬け',url:'https://www.youtube.com/watch?v=h-ta5jVjvRg',ing:[['白菜','1/4個（約500g）'],['塩（下漬け用）','小さじ2'],['ゆず皮','1/2個分'],['昆布','2g'],['塩','小さじ1/2'],['ゆず果汁','大さじ1'],['みりん','大さじ2'],['酢','大さじ1']],steps:['白菜を1cm幅に切る','水洗いし、水気を切ってポリ袋に入れる','塩小さじ2を入れてよくなじませる','重石をして1時間おく','ゆずの皮を半分剥き細切りにする','ゆずを半分に切って絞る（大さじ1）','みりんと酢を加熱する','白菜の水気を絞る','保存袋に移して調味料を加えなじませる','冷蔵庫で一晩おく']},
+      {id:'pro25',name:'糖しぼり大根',url:'https://www.youtube.com/watch?v=uV_yaMHQZXI',ing:[['大根','1kg'],['砂糖','200g（大根の20%）'],['塩','40g（4%）'],['酢','50ml（5%）']],steps:['大根の両端を切り落とし皮を剥く','4等分に切る','保存袋に大根と調味料を入れざっくり混ぜる','袋を二重にしてタッパーに入れる','冷蔵庫で5日以上寝かせる']},
+      {id:'pro26',name:'大根の煮物',url:'https://www.youtube.com/watch?v=CUlPT3LlTQQ',ing:[['大根','1本'],['こんにゃく','1袋'],['さつま揚げ','2枚'],['酒','20〜30cc'],['みりん','20〜30cc'],['めんつゆ','20〜30cc'],['砂糖','大さじ1〜1.5']],steps:['大根は皮をむき1cm程度の厚さに切る','さつま揚げ・こんにゃくも食べやすい大きさに切る','サラダ油で大根を軽く炒める','さつま揚げ・こんにゃくを加え軽く炒める','酒・みりんを入れアルコール分を飛ばす','めんつゆ・砂糖を加えフタをして中火で約10分煮る','途中適宜混ぜさらに5分煮る','大根が柔らかくなったらフタをとって5分ほど煮て汁気を飛ばす']},
+      {id:'pro27',name:'味染み五目きつね',url:'https://www.youtube.com/watch?v=rYiIRsQ9-hU',ing:[['油揚げ','4枚'],['にんじん','1/2本'],['椎茸','3個'],['しめじ','1/3株'],['長ネギ','1/2本'],['鶏むね肉','1/2枚'],['スパゲッティ','2本'],['卵','3個'],['酒','50cc'],['みりん','50cc'],['めんつゆ','50cc'],['醤油','適量'],['砂糖','大さじ1'],['水','150cc']],steps:['油揚げの片端を切る','具材（にんじん・椎茸・しめじ・長ネギ・鶏むね肉・切った油揚げ）を細かく切る','溶いた卵に具材を混ぜる','袋状の油揚げに詰める','口をスパゲッティで閉じる','フライパンに酒・みりんを入れアルコール分を飛ばす','めんつゆ・砂糖を加えひと煮立ちしたら油揚げを入れ、フタをして時々返しながら15〜20分煮る']},
+      {id:'pro29',name:'筑前煮',serv:'1人前',url:'https://www.youtube.com/watch?v=h8P8A09ZQoM',ing:[['鶏もも肉','60g'],['干し椎茸','1枚'],['レンコン','35g'],['にんじん','25g'],['こんにゃく','40g'],['里芋','50g'],['ごぼう','25g'],['絹さや','2枚'],['油','適量'],['酒','大さじ1強'],['干し椎茸の戻し汁','大さじ2強'],['砂糖','小さじ1'],['みりん','小さじ2'],['しょうゆ','小さじ2']],steps:['干し椎茸をぬるま湯に3時間浸す','鶏もも肉を食べやすい大きさにカット','里芋の皮を剥いて縦割りにカット','にんじんは皮を洗って乱切りにカット','レンコンは皮をむき乱切りにカット','ごぼうを食べやすい乱切りにカット','こんにゃくをスプーンでちぎり下茹で','里芋を塩で揉んでヌルを出し、水洗いして下茹で','絹さやはスジを取り15秒茹でて氷水に落とす','フライパンで鶏肉の皮目に焼き色をつけ、身側をさっと焼いて取り出す','同じフライパンに油を足して野菜を2分炒め、砂糖を加えてさらに炒める','酒を加えて沸かし、椎茸の戻し汁・みりん・しょうゆを順に加える','鶏肉を戻し入れ、中火で30分煮る','火を止めて30分休ませる','再度火をつけて煮汁が少なくなるまで煮詰めて完成']},
+      {id:'pro32',name:'カボチャの煮物',url:'https://www.youtube.com/watch?v=cyClGB3_BvY',ing:[['かぼちゃ','1/4個'],['かつお出汁','360cc'],['みりん','45cc'],['薄口醤油','25cc'],['砂糖（中ザラメ）','15g'],['水（出汁用）','1リットル'],['昆布','2g'],['鰹節','2つかみ']],steps:['かぼちゃを食べやすい大きさに切る','少し皮をむく','皮の面のみ面取りをする','かぼちゃを鍋に並べ、水1Lを加える','沸いてきたら弱火にする','【鰹だし】鍋に水1Lと昆布を入れて火にかけ、沸いてきたら弱火にして30分待ち昆布を取り出す','再び強火にして沸いてきたらアクを取り、火を止める','温度が少し下がったらかつお節を入れ、鰹出汁をこす','かぼちゃの鍋に鰹出汁・みりん・醤油・砂糖を加える','クッキングシートで落とし蓋をして火にかける','煮汁が減ってきたら火を止めて完成']},
+      {id:'pro33',name:'栗の渋皮煮',url:'https://www.youtube.com/watch?v=HsznHEPpfdQ',ing:[['栗','20粒'],['水','500cc'],['砂糖（三温糖）','300g'],['ラム酒','大さじ1']],steps:['栗の平らな面に切れ目を入れる','沸いたお湯に浸けて常温になるまで1時間放置','鬼皮を剥いて渋皮を傷つけないよう丁寧に処理','水からゆっくり茹でてアク抜きを丁寧に行う','水・砂糖で蜜を作り栗を入れて弱火で煮る','ラム酒を加えて完成（子ども向けはアルコールを飛ばす）']},
+      {id:'pro34',name:'自家製たくあん',url:'https://www.youtube.com/watch?v=7OjwlqkVuss',ing:[['大根','1/6本'],['ゆず','1/6個'],['きび糖','35g'],['米酢','8cc'],['塩','7g'],['はちみつ','7g']],steps:['大根は皮ごとキレイに洗う','葉と根を切り落とし、縦横半分にカット','ジッパー付きの袋に入れる','ゆずを絞り、皮の白い部分を除いて刻む','漬け液（きび糖・米酢・塩・はちみつ）を合わせる','袋に漬け液・ゆず果汁・皮を入れて大根と絡める','袋にメンキを当てて冷蔵庫で3日間漬け込む','半日ごとに袋を反転させる']},
+      {id:'pro36',name:'煮魚',serv:'1人前',url:'https://www.youtube.com/watch?v=q8o16vVqgf0',ing:[['銀鱈の切り身（どの魚でもOK）','1切れ'],['ごぼう','1節（4cmカット）'],['木綿豆腐','1/6丁'],['小松菜','適量'],['生姜','5g'],['鰹出汁','100cc'],['酒','大さじ1強'],['みりん','大さじ1強'],['しょうゆ','大さじ1強'],['砂糖','大さじ1'],['水（出汁用）','1000cc'],['昆布','4g'],['かつお節','20g']],steps:['50〜60度のお湯に魚を約20秒浸して霜降り処理','表面が白くなったら水にさらして冷ます','残ったウロコや血を丁寧に取り除く','鍋に合わせ出汁を作り砂糖を溶かす','魚・豆腐・ごぼうを入れておとし蓋をして強火','沸いたら中弱火にして15分煮る','火を止めて休ませ、出汁の味を魚に含ませる','再着火して沸いたら弱火にしてさらに15分煮て完成']},
+      {id:'pro37',name:'白和え',url:'https://www.youtube.com/watch?v=RWoW812uhHY',ing:[['木綿豆腐','1丁（約350g）'],['ほうれん草','1p（約200g）'],['人参','60g'],['椎茸','2枚'],['つきこんにゃく','1p（約150g）'],['砂糖','大さじ1.5'],['薄口しょうゆ','大さじ1'],['すりごま','大さじ2'],['ごま油','小さじ1']],steps:['木綿豆腐を横半分に切りキッチンペーパーで包み、重石をして約2時間水切り','人参を3mmにスライスして細切り','椎茸の石づきを取り3mm幅にスライス','つきこんにゃくを約4cmにカット','ほうれん草の根元に切り込みを入れ水でよく洗う','湯を沸かしほうれん草・人参・椎茸・こんにゃくを順に茹で、冷水に取って水気を切る','水切りした豆腐をしっかり絞り、裏ごしを2回してなめらかにする','調味料（砂糖・薄口醤油・すりごま・ごま油）を加えて混ぜる','野菜に薄口醤油小さじ1で「しょうゆ洗い」して水気をしぼる','調味した豆腐と野菜を和え、塩で味を整えて完成']},
+      {id:'pro38',name:'ゴーヤの甘酢漬け',url:'https://www.youtube.com/watch?v=X8cpk-OkDCM',ing:[['ゴーヤ','2本（約600g）'],['生姜','45g'],['塩','大さじ1（苦味抜き用）'],['水','200cc'],['米酢','200cc'],['砂糖','80g']],steps:['ゴーヤの種とワタを取り除き2mmにスライス','ボールに入れて塩を振り優しく揉む','10分放置後、水を4〜5回替えて苦味を洗い流す','生姜の千切りを作る','甘酢（水・酢・砂糖）を合わせる','ゴーヤと生姜の水気を絞って保存容器に入れ甘酢を注ぐ','冷蔵庫で半日置いて完成']},
+      {id:'pro_iwashi',name:'イワシのうま煮',url:'https://www.youtube.com/watch?v=XI9_f9u356Y',ing:[['イワシ','1パック'],['水','適量'],['酢','適量'],['生姜','適量'],['料理酒','適量'],['醤油','適量'],['砂糖','適量']],steps:['イワシの鱗・頭・はらわた・えらを取る','おろした魚を洗う','鍋にイワシを並べ水を加える','酢を加えて火にかける','フタをして煮込む','調味料を加えて煮込む','アクを取る','イワシを裏返す','水分がほぼなくなるまで煮る','火を止めフタをしておく']},
+      {id:'pro39',name:'お雑煮',serv:'1人前',url:'https://www.youtube.com/watch?v=q4B_PiLSD0M',ing:[['お餅','1個'],['鶏もも肉','50g'],['大根','50g'],['人参','17g'],['かまぼこ','1切れ'],['小松菜','17g'],['ゆずの皮','適量'],['大根おろし','38g'],['水','125cc'],['顆粒だし','1g'],['しょうゆ','小さじ2'],['みりん','小さじ1']],steps:['大根と人参をイチョウ切り','小松菜をよく洗って4cmにカット','鶏もも肉を30〜40gの大きさにカット','大根おろしを作る','フライパンで餅を焼き、鶏肉の皮もしっかり焼く','鍋に調味料を入れて温め、大根・人参・鶏肉を入れて沸かす','大根が煮えたら火を止め10分置いて味を染み込ませる','餅とかまぼこを入れて沸かし、小松菜をさっと炊く','大根おろしと刻みゆずをのせて完成']},
+      {id:'pro44',name:'フライパンで作る焼き鳥',url:'https://www.youtube.com/watch?v=bbIt3kO36Mg',ing:[['鶏もも正肉','2枚'],['鶏むね肉','2枚'],['梅干し','3個'],['大葉','5枚'],['ししとう','8本'],['すだち','1個'],['わさび','少々'],['塩','少々'],['サラダ油','少々'],['みりん（A）','180cc'],['砂糖（A）','50g'],['醤油（A）','180cc']],steps:['鍋にみりんを入れアルコールを飛ばし、砂糖・醤油を加えてひと煮立ちさせ、弱火で10分煮込んでアクを取り冷ます','梅干しの種を取って包丁で叩く、大葉を千切りにして水洗い、ししとうのヘタを切り落として切れ目を入れる','鶏肉の皮を剥いで一口大に切り、繊維を縫うように串に打つ','剥いだ皮を湯でさっと茹でて一口大に切り串に打つ','むね肉に塩をふってフライパンで中火で焼く','もも・皮はフライパンで中火で焼き目をつけ、余分な油を拭いてタレで煮絡める','ししとうを炒めて塩をふる','器に盛り、むね肉に梅しそ・わさびをのせてすだちを添える']},
+      {id:'pro45',name:'おでん',url:'https://www.youtube.com/watch?v=7q30WDiFrvU',ing:[['大根','75g'],['こんにゃく','1/4枚'],['ちくわぶ','1/4本'],['ちくわ','1/2本'],['はんぺん','1/4枚'],['じゃがいも（メークイン）','1個'],['手羽元','1本'],['卵','1個'],['練り物（ごぼう巻き・さつま揚げ等）','適量'],['出汁（A）','300cc'],['薄口醤油（A）','小さじ2'],['濃口醤油（A）','小さじ1弱'],['みりん（A）','小さじ4'],['塩（A）','少々'],['粉からし（B）','小さじ2'],['薄口醤油（B）','少々'],['酢（B）','少々'],['砂糖（B）','少々']],steps:['大根を2〜3cm厚の輪切りにして皮を剥き、十字の切れ目を入れて強火で30分下茹で','こんにゃくに穴を開けて食べやすく切る、ちくわぶ・ちくわ・はんぺんも食べやすく切る、じゃがいもの皮を剥く、手羽元に切れ目を入れる','大根の鍋にこんにゃくを入れ5分下茹でしてザルに上げる','同じ湯で練り物をさっと茹でてザルに上げる','卵を茹でてゆで卵にして殻を剥く','鍋にAを入れ、大根・こんにゃく・手羽元・じゃがいも・ちくわぶ・ゆで卵を入れて弱火で30分煮る','練り物を加えて10分煮て、最後にはんぺんを入れさっと煮て完成','粉からしをぬるま湯で溶いてBの調味料と混ぜてからしを作る']},
+      {id:'pro63',name:'豚の角煮',url:'https://www.youtube.com/watch?v=U_R7ODpXGmk',ing:[['豚バラ肉ブロック','800g'],['生姜スライス','2〜3枚'],['料理酒（下茹で用）','80cc'],['昆布（下茹で用）','2g'],['水（下茹で用）','適量'],['豚の煮汁','560cc'],['本みりん','80cc'],['醤油','80cc'],['砂糖','80g']],steps:['豚バラ肉ブロックを細長くカット','フライパンを温めて中火以上で肉を焼く','両面・側面も焼く','お湯で余分な油を落とす','お湯または水でさっと下茹でをする','3〜4分程煮て肉の臭みをとる','お湯にさらし臭みを落とす','肉が浮くくらいまでの水に浸らせる','料理酒・スライスした生姜を入れて火にかける','昆布を入れる','キッチンペーパーで落とし蓋をする','火を止めて冷ます','ペーパーと余分な油を取り除く','豚の煮汁に砂糖・本みりんを加えて火にかける','砂糖を溶かす','豚の角煮を入れる','アクを取り、落とし蓋をする','弱火で10分煮る','醤油を加える','弱火で1時間火を入れる','一晩寝かせて味を入れる','寝かせたら弱火で火を入れる','温まればもう一度冷まし、温め直す','温まれば完成']},
+      {id:'pro56',name:'だし巻き卵',url:'https://www.youtube.com/watch?v=AixcUplkMWg',ing:[['卵','3個'],['水','110cc'],['鰹粉','3g'],['塩','小さじ1/3'],['味の素','4振り'],['砂糖','2つまみ']],steps:['卵3個をよく混ぜる','水・鰹粉・塩・味の素・砂糖を混ぜる','油を引いた卵焼き器で巻きながら焼く']},
+    ],
+    '洋食':[
+      {id:'pro88',name:'和風ハンバーグ',serv:'2〜3人前',url:'https://www.youtube.com/watch?v=R6IwXYQ63gE',ing:[['合挽き肉','300g'],['玉ねぎ','1/2個'],['大根おろし','100g'],['サラダ油','大さじ1'],['コショウ','少々'],['溶き卵','1/2個'],['ケチャップ','小さじ2'],['パン粉','大さじ2'],['牛乳','大さじ2'],['みりん（ソース）','大さじ1'],['酒（ソース）','大さじ1'],['醤油（ソース）','大さじ1'],['ケチャップ（ソース）','大さじ1'],['粒マスタード（ソース）','大さじ1'],['はちみつ（ソース）','大さじ1']],steps:['玉ねぎをみじん切りにし、塩・みりんで炒めて冷ます','冷えたひき肉をボウルに入れ塩を加えてよく捏ね、玉ねぎとつなぎ材料を加えてさらに捏ね4等分にする','フライパンに油を引き、丸めた肉を並べ中央に窪みを作る','蓋をして中火で約2分→裏返して2分→水・酒各大さじ3を加えて蓋をして5分→火を止め余熱で2分','ハンバーグを取り出し、残ったフライパンにソース材料を入れて沸騰させる','盛り付けてソースをかけ、大根おろしを添える']},
+      {id:'pro5',name:'ハンバーグ',serv:'2人前',url:'https://www.youtube.com/watch?v=qgL4wLgADUI',ing:[['牛豚合挽き肉','300g'],['玉ねぎ','1/2個（約100g）'],['卵','1個'],['バター','10g'],['塩','少々'],['黒胡椒','少々'],['コンソメ','小さじ2/3'],['水','大さじ3'],['パン粉','大さじ4'],['粉ゼラチン','小さじ2'],['牛脂','2個'],['サラダ油','少々'],['水（蒸し焼き用）','50cc'],['酒（ソース用）','大さじ2'],['醤油（ソース用）','大さじ2'],['みりん（ソース用）','大さじ2'],['味の素（ソース用）','2振り'],['にんにく（ソース用）','1片']],steps:['玉ねぎをみじん切りにする','牛脂を小さめに切る','フライパンでバターを溶かす','玉ねぎを炒め、塩を振る','ひき肉に卵・牛脂・パン粉・水・コンソメ・ゼラチン・塩・黒胡椒・炒めた玉ねぎを入れて混ぜ合わせる','半分に分割して成型する','フライパンに油を少しひく','ハンバーグを焼く','水を入れて蒸し焼きにする','フライパンに調味料を入れてソースを作る']},
+      {id:'pro18',name:'ローストビーフ',serv:'4人前',url:'https://www.youtube.com/watch?v=7hbXA4hubcQ',ing:[['牛ももかたまり肉（厚さ4〜5cm）','500g'],['塩','小さじ1'],['酒','大さじ3'],['オリーブオイル','大さじ1〜2'],['玉ねぎ','1個'],['しょうゆ','大さじ1'],['みりん','大さじ2'],['酢','小さじ1/2'],['砂糖','小さじ1'],['赤ワイン（または酒）','大さじ2'],['わさび・粒マスタード','各適宜']],steps:['お肉を常温に戻し、塩を揉み込みラップに包む','玉ねぎを輪切りにしておく','フライパンにオリーブオイルをひいて肉を焼く','玉ねぎの上にお肉を乗せて酒蒸しにする','お肉を裏返して蒸し焼きにする','アルミホイルと布巾で包んで保温する','フライパンに調味料を入れてソースを作る','キッチンペーパー・ラップでお肉を包み冷蔵庫で寝かせる','お肉を薄く切る'],note:'※牛肉は新鮮なものを使用。国産の牛肉がおすすめ。※お肉の種類や形状・状態によって仕上がりが異なるため、加熱時間は調節してください。※小さなお子さま・ご高齢の方・妊娠中の方・体調に不安がある方はお召し上がりにならないでください。'},
+      {id:'pro16',name:'ジャーマンポテト',url:'https://www.youtube.com/watch?v=M6fxOvnkJGs',ing:[['じゃがいも','2個（約250g）'],['ベーコン','50g'],['オリーブオイル','小さじ2'],['玉ねぎ','1/4個（約60g）'],['コンソメ','小さじ1強'],['塩','少々'],['バター','10g'],['にんにく','2片'],['酒','大さじ1と1/2'],['黒胡椒','適量'],['粒マスタード・タバスコ','お好みで']],steps:['じゃがいもは皮付きのままスライスする','玉ねぎを厚切りにする','ベーコンを拍子切りにする','にんにくを粗みじん切りにする','じゃがいもを電子レンジで加熱する','フライパンにオリーブオイルをひく','ベーコン・じゃがいも・玉ねぎを炒める','コンソメ・バター・にんにくを加える','黒胡椒・酒・塩・パセリをかけて仕上げる']},
+      {id:'pro19',name:'半熟たまごサンドイッチ',serv:'2人前',url:'https://www.youtube.com/watch?v=nCznthfPH9w',ing:[['卵','6個'],['塩（茹で卵用）','1つまみ'],['マヨネーズ','大さじ2'],['塩コショウ','少々'],['食パン','4枚'],['有塩バター','適量'],['粒マスタード','適量'],['ハム','4枚'],['パセリ','少々'],['粗挽き黒コショウ','少々'],['ケチャップ','お好みで']],steps:['卵4個は水から茹でて沸いたら中火で5分茹でて半熟に、残り1個は固茹でにする','すべての卵の殻をむく。固茹で卵は潰してマヨネーズ・塩コショウで和える','食パンをトーストして片面にバター、もう片面に粒マスタードを塗る','まな板にラップを広げ、マスタードのパンの上にハム・半熟たまご2個・キャベツラペを重ね、バターのパンを上にのせる','ラップでしっかり包んで5分おいて馴染ませ、半分に切る','パセリのみじん切りと黒コショウをお好みでふる']},
+      {id:'pro40',name:'昭和のオムライス',url:'https://www.youtube.com/watch?v=sj84mkq7aEA',ing:[['鶏もも肉','150g'],['玉ねぎ','1/4個'],['椎茸','2枚'],['いんげん','3本'],['ご飯','400g'],['卵','4個（1人前2個）'],['パセリ','適量'],['塩・コショウ','少々'],['バター','30g'],['サラダ油','小さじ2'],['砂糖','少々'],['ケチャップ（A）','大さじ4'],['醤油（A）','小さじ1/2'],['みりん（A）','小さじ1/2'],['バター（B）','10g'],['ケチャップ（B）','大さじ4'],['酒（B）','大さじ1.5']],steps:['玉ねぎ・椎茸をみじん切り、いんげんを小口切り','鶏肉を1cm角にカット','フライパンにバター10gを溶かし鶏肉を塩コショウして中火で炒め、野菜を加えしんなりするまで炒める','温かいご飯を加えてほぐし、Aを加えて中火で炒め、塩コショウで味を調える','卵2個に塩・砂糖各1つまみを加えよく混ぜる','別フライパンでサラダ油・バターを溶かし溶き卵を入れて半熟状に焼く','チキンライスをのせて包み、器に乗せペーパータオルで形を整える','空いたフライパンにBを入れ弱火でバターケチャップソースを作り、ソースをかけてパセリを添える']},
+      {id:'pro50',name:'ビーフシチュー',serv:'3〜4人前',url:'https://www.youtube.com/watch?v=7MVlPMrUcHU',ing:[['牛もも肉','約200g'],['赤ワイン','約600cc'],['セロリ','1/3本'],['玉ねぎ','1個'],['にんじん','約100g'],['ニンニク','1片'],['マッシュルーム','3〜4個'],['ホールトマト缶','1/3缶'],['ローリエ','1枚'],['小麦粉','2つまみ'],['ココアパウダー','大さじ1'],['ブルーベリージャム','大さじ1.5'],['味噌','大さじ1'],['無塩バター','10g'],['デミグラスソース','約30g'],['オリーブオイル','大さじ1/2'],['塩','少々']],steps:['牛もも肉は小さめにカットして塩をふり少しおく','セロリは皮を剥いて薄くスライス。玉ねぎ・にんじん・ニンニクも薄くスライス。マッシュルームは厚めにスライス','フライパンにオリーブオイルを入れ火にかけ、牛肉をさっとソテーする','別のフライパンに赤ワイン約300ccを入れ火にかける','牛肉に焼き色がついたら赤ワインのフライパンに加え、ローリエを入れて汁気が少なくなるまで約13分煮詰める','牛肉を焼いたフライパンにバターを入れ、セロリ・玉ねぎ・にんじん・ニンニクを加えて塩をふり野菜がしんなりするまで炒め、マッシュルームを加えて軽く炒め合わせる','ホールトマト缶を加えて2分ほど煮詰め、小麦粉・ココアパウダーを加えてよく混ぜたら、ブルーベリージャムを加えて炒め合わせ、赤ワイン約300ccを加えて煮詰める','⑤の汁気が少なくなってきたら⑦と合わせ、味噌を加えて10分ほど煮込む（煮詰まりすぎたら水を足す）','デミグラスソースを加えてさらに2〜3分煮込む']},
+      {id:'pro61',name:'ポークステーキのフレッシュトマトソース添え',serv:'2人前',url:'https://www.youtube.com/watch?v=88FonewOCZo',ing:[['豚ロース肉','300g'],['薄力粉','適量'],['玉ねぎ','100g'],['トマト','220g'],['にんにく','2片'],['コンソメ','小さじ2'],['塩','1つまみ'],['黒コショウ','適量'],['オリーブオイル','適量'],['乾燥パセリ','適量']],steps:['豚ロース肉を常温に戻し、筋切りをする','塩・黒コショウをふり、薄力粉を両面にふる','玉ねぎは薄切り、トマトは角切り、にんにくは薄切りにする','フライパンにオリーブオイルを熱し、にんにくを炒めて香りを出す','豚ロース肉を入れ、両面に焼き色をつける','肉を一旦取り出す','同じフライパンで玉ねぎを炒める','玉ねぎがしんなりしたらトマトを加えて炒める','コンソメ・塩を加えてソースを煮詰める','肉をフライパンに戻し、ソースと絡めながら火を通す','器に盛り、フレッシュトマトソースをかけ乾燥パセリを散らす']},
+      {id:'pro55',name:'時短シーフードマカロニグラタン',serv:'2人前',url:'https://www.youtube.com/watch?v=5XWE0FTtzxo',ing:[['シーフードミックス（冷凍）','150g'],['臭み消し用片栗粉','大さじ2'],['玉ねぎ','1/2個'],['じゃがいも','1個'],['まいたけ','小1パック'],['酒','大さじ2'],['バター','20g'],['小麦粉','大さじ1・1/2'],['牛乳','2カップ'],['マカロニ','50g'],['ピザ用チーズ','適宜'],['塩・こしょう','各適宜']],steps:['玉ねぎとじゃがいもを切る','シーフードミックスに片栗粉を揉み込む','2〜3回水を変えてよく洗って水気を切る','フライパンにバターを溶かす','玉ねぎを軽く炒めてじゃがいもを入れる','シーフードミックス、小麦粉を入れて炒める','酒を加えてさっと絡める','舞茸をちぎって加えて炒める','牛乳を入れて一煮立ちさせる','マカロニ、塩を入れて煮る','時々混ぜる','塩、胡椒を加える','お皿に移してチーズを混ぜる','上にチーズを散らす','トースターで焼き色がつくまで焼く'],note:'※まいたけは種類によっては黒っぽくなる場合があるので、気になる方は他のきのこでも。※動画では9分茹でのマカロニを使用。'},
+      {id:'pro74',name:'ピーマンの肉詰め',serv:'2〜3人前',url:'https://www.youtube.com/watch?v=qzvFuy0EmkU',ing:[['合いびき肉','300g'],['ピーマン','5〜6個'],['玉ねぎ','1/2個'],['卵','1個'],['大根おろし','適量'],['片栗粉','適量'],['サラダ油','適量'],['砂糖','少々'],['塩','少々'],['こしょう','少々'],['パン粉','大さじ2'],['酒（蒸し焼き用）','大さじ2'],['水（蒸し焼き用）','大さじ2'],['酒（タレ用）','大さじ1'],['みりん（タレ用）','大さじ1'],['水（タレ用）','大さじ1'],['酢（タレ用）','大さじ1'],['醤油（タレ用）','大さじ1'],['砂糖（タレ用）','大さじ1'],['オイスターソース（タレ用）','大さじ1']],steps:['玉ねぎをみじん切りにして炒める','ピーマンを半分に切り種を取る','合いびき肉・玉ねぎ・卵・砂糖・塩・こしょう・パン粉で肉だねを作る','ピーマンの内側に片栗粉をふる','ピーマンに肉だねを詰める','フライパンに油を熱し肉側を下にして焼く','酒と水を加えて蓋をし蒸し焼きにする','タレの材料を合わせてフライパンに入れ絡める','器に盛り大根おろしを添える']},
+    ],
+    '中華':[
+      {id:'pro10',name:'麻婆豆腐',serv:'1〜2人前',url:'https://www.youtube.com/watch?v=Myqnk5iOb30',ing:[['豚挽肉','100g'],['にんにく','2かけ'],['絹豆腐','1丁（300g）'],['長ネギ','1/2本'],['豆板醤','大さじ1'],['甜麺醤','大さじ1'],['ラー油','小さじ2'],['創味シャンタン','小さじ1弱'],['酒','大さじ1'],['醤油','小さじ2/3'],['水','200cc'],['塩','1つまみ'],['胡椒','適量'],['サラダ油','適量'],['山椒','適量'],['片栗粉（水溶き用）','大さじ1'],['水（水溶き用）','大さじ2']],steps:['にんにく・長ネギを粗みじん切りにする','フライパンに油を入れて挽肉を炒める','にんにく・豆板醤・甜麺醤・ラー油を入れる','豆腐をさいの目切りにして茹でる','肉味噌に豆腐を入れる','水を加えて沸かす','創味シャンタン・ネギを加える','醤油・酒・黒胡椒で味付けをする','水溶き片栗粉を入れて混ぜる','醤油・塩・ラー油で仕上げる']},
+      {id:'pro42',name:'焼豚',serv:'2〜3人前',url:'https://www.youtube.com/watch?v=zKUTbLNnXQ0',ing:[['豚肩ロースブロック','400g'],['サラダ油','大さじ1'],['からし','適量'],['はちみつ','適量'],['黒コショウ','適量'],['砂糖（A）','150g'],['塩（A）','大さじ1'],['醤油（B）','100cc'],['おろし生姜（B）','小さじ1'],['おろしニンニク（B）','小さじ1'],['ウイスキー（B）','大さじ1'],['きゅうり','1本'],['長ねぎ','1本'],['ごま油（C）','大さじ1'],['酢（C）','小さじ2'],['塩（C）','2つまみ'],['砂糖（C）','2つまみ'],['一味唐辛子（C）','少々'],['白ごま（C）','少々']],steps:['豚肉にフォークで全体に穴を開け、ポリ袋にAを入れて揉み、砂糖と塩が溶けるまで常温でおく','袋にBを加えてさらに揉み込み、冷蔵庫で3時間以上おく','焼く1時間前に冷蔵庫から出し、漬け汁から取り出してペーパータオルで水気を拭く','フライパンに油を入れ弱火で15分ほど焼いて全体に焼き目をつけ、余分な油を拭き取る','火を止めて蓋をして15分休ませる','漬け汁を注ぎ弱火〜中火で5分煮絡め、とろみがついたら火を止めて蓋をして冷ます','一口大に切り分けて器に盛り、はちみつ・黒コショウをかけてからしを添える','きゅうりを塩ずりして5cmの千切り、長ねぎを笹打ちにして水にさらす','水気を切り、食べる直前にCと和える']},
+      {id:'pro43',name:'鶏むね肉のタン塩風',serv:'2〜3人前',url:'https://www.youtube.com/watch?v=uKHNjiJc4nI',ing:[['鶏むね肉','1枚（300g）'],['長ねぎ','1/2本'],['大根おろし','100g'],['レモン','1/2個'],['黒コショウ','少々'],['ごま油（A）','大さじ2'],['みりん（A）','大さじ1'],['白ごま（A）','大さじ1'],['昆布茶（A）','小さじ1'],['塩（A）','少々'],['酒（B）','大さじ1'],['サラダ油（B）','小さじ2'],['おろしニンニク（B）','小さじ1'],['塩（B）','小さじ1']],steps:['長ねぎをみじん切りにして大根おろし・Aと混ぜ合わせる','鶏むね肉の皮をはいで3mm厚にそぎ切りにし、Bを揉み込む','フライパンをしっかり熱して鶏肉を並べ両面さっと焼く','器に盛り①をかけて黒コショウをふり、レモンを添える']},
+      {id:'pro46',name:'エビチリ',url:'https://www.youtube.com/watch?v=GfzTTzorEQk',ing:[['殻付きエビ','12尾（約300g）'],['長ねぎ','1/3本'],['卵','1個'],['グレープシードオイル（サラダ油可）','適量'],['水溶き片栗粉','大さじ1.5'],['酢','小さじ1/4'],['塩（A）','1つまみ'],['片栗粉（A）','大さじ1'],['水（A）','大さじ1'],['塩（B）','2つまみ'],['白コショウ（B）','少々'],['酒（B）','大さじ1.5'],['片栗粉（B）','大さじ1'],['グレープシードオイル（B）','大さじ1'],['おろし生姜（C）','小さじ2/3'],['おろしニンニク（C）','小さじ1/3'],['豆板醤（C）','大さじ1'],['トマトケチャップ（C）','大さじ2'],['水（C）','180cc'],['鶏がらスープの素（C）','小さじ1/3'],['塩（C）','1つまみ'],['砂糖（C）','小さじ1/3'],['白コショウ（C）','少々']],steps:['エビの殻を剥きAで揉んで水でゆすぎ背わたを取り、水気を拭く','BのA塩・コショウでしっかり揉んで粘りを出し、酒・片栗粉・オイルの順に揉み込む','長ねぎをみじん切りにする','フライパンに火をつける前にオイルを入れエビを並べ、中火で両面焼き色をつけて取り出す','火を消した状態でCの生姜・ニンニク・豆板醤・ケチャップを入れ弱火にかけ、グツグツしたら残りのCを加える','一煮立ちしたらエビと長ねぎを加え、水溶き片栗粉でとろみをつける','溶き卵を回し入れゆっくり混ぜながら火を通し、火を止めて酢を加える','再点火してオイルをかけてツヤを出す']},
+      {id:'pro49',name:'鶏マヨ',serv:'2〜3人前',url:'https://www.youtube.com/watch?v=Sn1Y1dW981I',ing:[['鶏むね肉','1枚（約300g）'],['レタス','3枚'],['かいわれ','1/3パック'],['ミニトマト','適量'],['塩','少々'],['砂糖','少々'],['黒コショウ','少々'],['サラダ油','適量'],['マヨネーズ（A）','大さじ5'],['はちみつ（A）','大さじ1'],['レモン汁（A）','小さじ1'],['おろしニンニク（A）','小さじ1/2'],['豆板醤（A）','小さじ1/2'],['卵（B）','1個'],['牛乳（B）','大さじ1'],['片栗粉（B）','大さじ2'],['薄力粉（B）','大さじ2']],steps:['レタスを細切り、かいわれの根元を落として半分に切り、水にさらして冷蔵庫で冷やす','Aを混ぜ合わせてマヨソースを作る','鶏肉の皮を剥いで1cm厚の一口大に切り、皮も食べやすく切る。塩・砂糖各2つまみを揉み込む','Bを混ぜて衣を作り鶏肉を絡める','フライパンにサラダ油をやや多めに入れ、中火で3分ほど揚げ焼き（途中ひっくり返す）','ボウルでマヨソースを絡める','レタスを敷いた器に盛り付け、黒コショウをふりミニトマトを添える']},
+      {id:'pro52',name:'油淋鶏（ユーリンチー）',serv:'2人前',url:'https://www.youtube.com/watch?v=L7Zt840AVIU',ing:[['鶏もも肉','1枚（約300g）'],['長ねぎ','1/2本'],['揚げ油','適宜'],['片栗粉','大さじ6〜7'],['しょうがのすりおろし（下味）','1かけ'],['しょうゆ（下味）','大さじ1'],['酒（下味）','大さじ2'],['しょうがのみじん切り（たれ）','1かけ'],['にんにくのみじん切り（たれ）','1/2かけ'],['しょうゆ（たれ）','大さじ2'],['酢（たれ）','大さじ1〜1と1/2'],['みりん（たれ）','大さじ1/2'],['砂糖（たれ）','大さじ1/2'],['ごま油（たれ）','大さじ1/2'],['青じそ','1枚']],steps:['鶏肉を半分に切り、切り込みを入れる','袋に下味調味料と鶏肉を入れて揉み込み、10分おく','たれの調味料を合わせてレンジで1分加熱する','長ねぎを半月切りにしてたれに合わせる','鶏肉に片栗粉をまぶす','油で5〜6分揚げる','ネギだれをかける']},
+      {id:'pro69',name:'レバニラ炒め',url:'https://www.youtube.com/watch?v=AuO-PiEqBrU',ing:[['鶏または牛レバー','100g'],['牛乳（下処理用）','100g'],['塩','少々'],['砂糖（下処理用）','少々'],['重曹（下処理用）','少々'],['オイスターソース','大さじ1〜2'],['醤油','大さじ1〜2'],['みりん','大さじ1〜2'],['生姜','適量'],['にんにく','適量'],['水溶き片栗粉','大さじ1'],['ニラ','半束'],['ごま油','大さじ1/2'],['マンゴー（隠し味）','適量']],steps:['レバーをひと口大に切り牛乳・塩・砂糖・重曹で下処理し臭みを抜く','オイスターソース・醤油・みりんを合わせてソースを作る','生姜とにんにくをみじん切りにする','フライパンを熱してレバーを炒める','ソース・生姜・にんにくを加えて炒め合わせる','水溶き片栗粉でとろみをつける','ニラを加えてさっと炒め、ごま油で仕上げる']},
+    ],
+    '揚げもの・フライ':[
+      {id:'pro30',name:'かき揚げ',serv:'1人前',url:'https://www.youtube.com/watch?v=sdjBQrxslIc',ing:[['玉ねぎ','20g'],['人参','15g'],['ごぼう','8g'],['椎茸','1/3個'],['長ネギ','5g'],['三つ葉','3g'],['打ち粉（小麦粉）','具材の1割'],['水','50cc'],['天ぷら粉','25g']],steps:['玉ねぎを1mmにスライスしてほぐす','人参をよく洗い1mmにスライスして1mmの千切り','ごぼうを1mmにスライスして千切りにし、水洗いしてアクを流す','椎茸を1mmにスライス','長ねぎを1mmの笹打ち','三つ葉は茎を3cm、葉を1cmにカット','全ての野菜をボールに入れて均等に混ぜる','野菜の重量の1割の小麦粉を加えて優しく混ぜる','小さいボールに野菜50gと天ぷら衣50gを入れて混ぜる','多めの油に具材を素早く入れてほぐし、箸と揚げ玉掬いで形成','表面1分、裏面30秒、再度表面30秒揚げる','油をよく切って重ねないように置く']},
+      {id:'pro66',name:'天ぷら',url:'https://www.youtube.com/watch?v=Myj83ZL2C74',ing:[['エビ','4本'],['カボチャ','4切れ'],['オクラ','4本'],['エノキ','半パック'],['シイタケ','4個'],['マイタケ','1パック'],['ナス','半分'],['小麦粉','適量'],['水（衣用）','160cc'],['天ぷら粉','100g']],steps:['野菜は食べやすい大きさにカットする','海老を処理する','天ぷら衣を作る','油の温度を180℃にする','小麦粉を打った野菜と海老を天ぷら衣にくぐらせて揚げる','油をよく切って、具材を重ねないようにする']},
+      {id:'pro2',name:'唐揚げ',url:'https://www.youtube.com/watch?v=xGKn7TD9jaM',ing:[['鶏モモ肉','1枚（約320g）'],['醤油','大さじ3強'],['みりん','大さじ1'],['酒','大さじ1'],['味の素','8振り（小さじ1/3）'],['にんにく','1片'],['ナツメグ','5振り'],['サラダ油','適量'],['片栗粉','適量']],steps:['鶏モモ肉を一口大に切る','醤油・みりん・酒・おろしにんにく・味の素・ナツメグを合わせ、鶏肉を20〜30分常温で漬ける','片栗粉をまぶす','中温の油でカラッと揚げる','レモンを添えて完成']},
+      {id:'pro51',name:'春巻き',serv:'約10個分',url:'https://www.youtube.com/watch?v=-k9JqFaYVnU',ing:[['豚ローススライス','2枚'],['たけのこ水煮（細切り）','100g'],['生きくらげ','30g'],['ピーマン','2個'],['キャベツ','100g'],['春巻きの皮','約10枚'],['水溶き片栗粉','大さじ3'],['サラダ油','適量'],['塩（A・下味）','少々'],['コショウ（A・下味）','少々'],['酒（A・下味）','大さじ1'],['片栗粉（A・下味）','大さじ1/2'],['サラダ油（A・下味）','小さじ1'],['水（B・あん）','50cc'],['鶏がらスープの素（B・あん）','小さじ1/2'],['砂糖（B・あん）','小さじ1'],['醤油（B・あん）','大さじ1/2'],['オイスターソース（B・あん）','大さじ1/2'],['コショウ（B・あん）','少々'],['薄力粉（C・のり）','大さじ1'],['水（C・のり）','大さじ1']],steps:['ピーマンは種を取って縦半分に切り横に細切り。生きくらげは細切り。キャベツは少し太めの細切りにする','豚ロースは細切りにしてAの塩・コショウ・酒を揉み込み、片栗粉・サラダ油をまぶす','フライパンにサラダ油大さじ1を入れて火にかけ、豚肉をほぐしながら軽く炒めたらたけのこを加えて軽く炒め合わせ、キャベツ・ピーマン・きくらげを加えてさっと炒め合わせる','Bを加えて水溶き片栗粉大さじ3でとろみをつける（片栗粉を入れた後はしっかり火を入れる）','バットに広げて粗熱を取り、春巻きの皮（ツルツルした面を下）で具を包み、Cを合わせた水溶き薄力粉でのりつけする','約100℃のサラダ油に入れ5分ほどじっくり揚げる（最後は油の温度を高くする）']},
+      {id:'pro48',name:'ポテトコロッケ',serv:'1〜2人前',url:'https://www.youtube.com/watch?v=kHwQeE6isr8',ing:[['じゃがいも（男爵）','1個'],['玉ねぎ','1/8個'],['豚ひき肉','40g'],['キャベツの千切り','適量'],['薄力粉','適量'],['パン粉','適量'],['バター','3g'],['塩','少々'],['コショウ','少々'],['サラダ油','少々'],['中濃ソース','適量'],['酒（A）','小さじ2'],['醤油（A）','小さじ1'],['みりん（A）','小さじ1'],['砂糖（A）','少々'],['片栗粉（A）','小さじ1'],['卵（B）','1/4個'],['牛乳（B）','小さじ1強']],steps:['じゃがいもを皮付きのまま4等分にして塩水から柔らかくなるまで茹で、お湯を捨てて皮を剥き、空炒りして水気を飛ばして熱いうちに潰す','玉ねぎをみじん切りにする','フライパンにバターと玉ねぎ・塩を入れてしんなりするまで中火で炒める','ひき肉を加えて塩・コショウをして炒め、弱火にしてAを加えて炒め合わせる','じゃがいもに④を加えて滑らかに混ぜ、塩コショウで味を調えてバットに広げて冷蔵庫で冷ます','卵液（B）を作り、丸めたコロッケに薄力粉・卵液・パン粉の順に衣をつける','160℃の油で3〜4分、途中一度ひっくり返して揚げる','器に盛りキャベツを添えてソースをかける']},
+    ],
+    '丼・ご飯もの':[
+      {id:'pro1',name:'カレー',serv:'3〜4人前',url:'https://www.youtube.com/watch?v=BcKNwo7bzJ4',ing:[['豚小間切れ肉','300g'],['玉ねぎ（中サイズ）','1個'],['ニンニク','1片'],['塩コショウ','少々'],['水','600ml'],['カレールー','半箱'],['バター','10g'],['ウスターソース','小さじ2'],['砂糖','小さじ1'],['サラダ油','大さじ1'],['乾燥パセリ','少々']],steps:['玉ねぎを薄くスライスする','にんにくの皮を取る','フライパンに油をひく','玉ねぎをレンジで加熱してからフライパンで炒める','豚こま肉をちぎって入れる','塩胡椒をして炒める','水・にんにく・ルーを入れる','バター・ウスターソース・砂糖を加える']},
+      {id:'pro20',name:'カツカレー',serv:'2人前',url:'https://www.youtube.com/watch?v=aArbHVjiDu0',ing:[['おろしニンニク','小さじ1'],['おろしショウガ','小さじ1'],['タマネギ','中1個'],['セロリ','1/2本'],['りんご','1/4個'],['ジャガイモ','小1個'],['牛脂','20g'],['塩','少々'],['カレー粉','大さじ1'],['水','600ml'],['カレールウ（中辛）','2かけ'],['豚ロース肉（とんかつ用）','2枚'],['塩コショウ','少々'],['卵','1個'],['水（バッター液用）','大さじ2'],['薄力粉','大さじ4'],['パン粉','適量'],['揚げ油','適宜'],['ご飯','2杯分'],['福神漬け','お好みで'],['らっきょう','お好みで']],steps:['【カレー】タマネギとセロリを粗みじん切りにする','りんごの皮を剥いてすりおろす','ジャガイモを小さめの乱切りにして水につけてアクを抜く','鍋に牛脂を入れて加熱し、溶けてきたらタマネギ・セロリを入れ塩を振って中火で炒める','飴色になったらおろしニンニク・おろしショウガ・りんごを入れ、水分がなくなるまで弱めの中火で炒める','カレー粉を入れてなじませ、水とジャガイモを入れて沸くまで加熱し弱火で15分煮込む','火を止めてカレールーを入れて溶く','【カツ】豚ロース肉の筋に切り込みを入れ筋切りをして全体を叩く','塩コショウで下味をつけ、卵・水・薄力粉を混ぜたバッター液とパン粉の順で衣をつける','170℃の油で裏返しながら約5分揚げる','【仕上げ】器にご飯を盛りカレーをかけ、カツを適当な幅に切ってのせる','お好みで福神漬け・らっきょうを添える']},
+      {id:'pro0',name:'チャーハン',url:'https://www.youtube.com/watch?v=EmCPHumbMvo',ing:[['サトウのご飯','1パック'],['豚バラ肉','50g'],['生姜','3g'],['卵','2個'],['長ネギ','5cmほど'],['塩','小さじ1/2'],['味の素','8振り'],['黒コショウ','適量'],['日本酒','大さじ1'],['紅ショウガ','適量']],steps:['生姜・ネギをみじん切りにする','豚肉に塩で下味をつけ、米粒くらいの大きさに切る','卵を溶いておく','フライパンにサラダ油を入れる','豚肉を炒める','生姜を炒める','卵・ご飯の順に入れて手早く炒める','塩・味の素を入れて炒める','長ネギを入れて炒める','黒胡椒を入れる','日本酒を入れる']},
+      {id:'pro31',name:'牛丼',serv:'1人前',url:'https://www.youtube.com/watch?v=yxMHu6UycQw',ing:[['牛バラスライス','125g'],['玉ねぎ','1/4個'],['生姜','5g'],['白米','1膳'],['水','125cc'],['酒','25cc'],['みりん','25cc'],['しょうゆ','25cc'],['砂糖','小さじ2']],steps:['玉ねぎを5mmにスライス','生姜を1mmの千切り','牛肉が長い場合8cm程度にカット','出汁を合わせて生姜の千切りを加える','冷たい煮汁に牛肉をほぐしながら入れる','煮汁が沸いたら素早く丁寧にアクをすくう','玉ねぎを入れて蓋をして15分煮る','味を見ながら煮て完成']},
+      {id:'pro54',name:'親子丼',serv:'2人前',url:'https://www.youtube.com/watch?v=FAUNrU9Jomk',ing:[['鶏もも正肉','200g'],['長ねぎ','1/2本'],['三つ葉','4本'],['卵','4個'],['刻みのり','少々'],['ご飯','適量'],['砂糖（A・下味）','小さじ1'],['醤油（A・下味）','小さじ2'],['出汁（B・煮汁）','200cc'],['みりん（B・煮汁）','100cc'],['醤油（B・煮汁）','50cc']],steps:['長ねぎは斜め薄切りにする。三つ葉は葉と軸に分け、軸は小口切りにする','鶏肉は一口大のそぎ切りにしてAをもみ込んでおく','ボウルにBを合わせて煮汁を作っておく。卵は1人前2個で軽く溶きほぐしておく','丼にご飯を盛り、刻みのりを敷いておく','小さいフライパンで1人前ずつ作る。煮汁・鶏肉・長ねぎ・三つ葉の葉の半量を入れ、中火にかけて鶏肉に火が通るまで煮る','2個分の卵の半量を中心から外側に回し入れ、優しく外側から内側に混ぜながら弱火と中火の間で火を入れる。程よく固まったら残りを同じように回し入れ半熟に火を入れる','丼のご飯の上にのせ、三つ葉の小口切りを散らす','もう1人前も同じように作る'],note:'だしの取り方は「<a href="https://www.youtube.com/watch?v=h9J5A5CGLaU" target="_blank">だしの取り方から教えます。万能＆簡単だしで作る【すだちオクラそば】</a>」をご覧ください'},
+      {id:'pro53',name:'天津飯',serv:'1人前',url:'https://www.youtube.com/watch?v=PrtUyfxQYno',ing:[['卵','2個'],['匠のカニカマ','40g'],['白ネギ','20〜30g'],['ごはん','250g'],['塩（卵液）','ひとつまみ'],['味の素（卵液）','ひとつまみ'],['コショウ（卵液）','少々'],['ゴマ油（卵液）','小さじ1'],['丸鶏ガラスープの素（餡）','小さじ1'],['砂糖（餡）','小さじ1.5'],['水（餡）','250cc'],['醤油（餡）','大さじ1'],['お酒（餡）','大さじ1'],['オイスターソース（餡）','大さじ1'],['コショウ（餡）','適量'],['水溶き片栗粉','適量'],['お酢','小さじ1'],['ゴマ油（仕上げ）','小さじ1']],steps:['カニカマのパックをほぐす','白ネギをみじん切りにする','卵を割りほぐし、塩・味の素・コショウ・ゴマ油で味付けをする','卵にカニカマ・白ネギを入れて混ぜる','餡の合わせ調味料（丸鶏ガラスープの素・砂糖・水・醤油・お酒・オイスターソース・コショウ）を混ぜ合わせる','水溶き片栗粉を用意する','ご飯を器に盛り付けておく','鍋に油を入れて熱する','卵液を入れて焼く','油を少し足してひっくり返す','ご飯に乗せる','フライパンの油を拭き取り、餡の合わせ調味料を入れて火にかける','沸騰したら水溶き片栗粉を少量入れる','再び沸いたら2度目・3度目に分けて水溶き片栗粉を加えてとろみをつける','ゴマ油とお酢を加えて卵にかける']},
+      {id:'pro67',name:'焼きとうもろこし炊き込みご飯',serv:'2人前',url:'https://www.youtube.com/watch?v=Clsj55sECbQ',ing:[['とうもろこし','1本'],['米','2合'],['醤油','小さじ1'],['バター','適量'],['水（A）','360cc'],['酒（A）','40cc'],['塩（A）','小さじ1'],['だし昆布（A）','3g']],steps:['米はといで30分浸水させ、ザルにあげ水気をきる','とうもろこしの皮をむき、ヒゲの緑色の部分は約1cmにカット、実は包丁でこそぎ取り、芯はぶつ切りにする','土鍋に米・A・芯・ヒゲを入れて沸いたら中火5分、弱火15分で炊く','フライパンで実を乾煎りして焼き目をつけ、醤油を絡めて取り出す','土鍋の昆布と芯を取り出し④を加えて5分蒸らす','お好みでバターをのせ器に盛る']},
+      {id:'pro21',name:'カツ丼',serv:'2人前',url:'https://www.youtube.com/watch?v=ijSp9FrP8m0',ing:[['豚ロース肉','2枚'],['塩コショウ','少々'],['薄力粉','適量'],['卵（衣用）','1個'],['パン粉','適量'],['タマネギ','1/2個'],['卵（とじ用）','2個'],['三つ葉','適量'],['だし汁（A）','80ml'],['濃口醤油（A）','大さじ2'],['みりん（A）','60ml']],steps:['豚ロース肉の赤身と脂身の筋に切り込みを入れ筋切りをして、叩いて形を整える','塩コショウで下味をつけ、薄力粉・卵・パン粉の順で衣をつける','160〜170℃の油で約5分揚げ、5〜6等分に切る','タマネギを薄切り、卵を軽く溶く、三つ葉を適当な長さに切って水にさらし水気を切る','Aの調味料を混ぜ合わせる','親子鍋にAの半量とタマネギの半量を入れ強火で加熱し、ひと煮立ちしたらトンカツをのせる','溶き卵の1/4量を回し入れ中火で加熱し、沸々したら火を止める','白飯を盛った丼にかけ、三つ葉を飾る。同様に繰り返し1人前ずつ作る']},
+    ],
+    'サラダ・副菜':[
+      {id:'pro71',name:'ナスのたたき',serv:'2〜3人前',url:'https://www.youtube.com/watch?v=sSMecH2HKjs',ing:[['ナス','3本'],['みょうが','2個'],['大葉','5枚'],['かいわれ','1/3パック'],['長ねぎ','1/4本'],['新生姜','50g'],['かつお節','適量'],['サラダ油','適量'],['ごま油','適量'],['醤油（自家製ポン酢用）','適量'],['みりん（自家製ポン酢用）','適量'],['酢（自家製ポン酢用）','適量'],['レモン汁（自家製ポン酢用）','適量'],['だし昆布（自家製ポン酢用）','適量']],steps:['ナスを斜め薄切りにして水にさらす','みょうが・大葉・かいわれ・長ねぎ・新生姜を切る','醤油・みりん・酢・レモン汁・だし昆布でポン酢を合わせる','フライパンにサラダ油・ごま油を熱しナスを両面4分ほど焼く','器にナスを並べポン酢をかけ薬味とかつお節を散らす']},
+      {id:'pro12',name:'ポテトサラダ',url:'https://www.youtube.com/watch?v=r7RBT2q1dK4',ing:[['じゃがいも','2個（約280g）'],['玉ねぎ','1/4個（50g）'],['にんにく','2片'],['水','大さじ3'],['ベーコン','60g'],['オリーブオイル','小さじ1'],['マヨネーズ','大さじ3と1/2'],['黒胡椒','小さじ1弱'],['塩','小さじ1/3'],['砂糖','小さじ1'],['味の素','6振り'],['タバスコ','お好みで']],steps:['にんにく・玉ねぎをスライスする','じゃがいもの皮をむき芽を取り除き小さめに切る','耐熱容器に野菜と水を入れてラップをかけ電子レンジで加熱する','ベーコンをダイス状のみじん切りにする','ベーコンをオリーブオイルで炒める','加熱した野菜にベーコンを加える','スプーンでじゃがいもを潰しながら混ぜる','冷めたらマヨネーズを加えて混ぜる','黒胡椒・塩・砂糖・味の素を加えて混ぜる','仕上げに黒胡椒をかける']},
+    ],
+    'スイーツ':[
+      {id:'pro28',name:'さつまいも団子',serv:'14個分',url:'https://www.youtube.com/watch?v=Mf1-3G1amSc',ing:[['さつまいも','600g'],['砂糖（三温糖）','2/3カップ'],['小麦粉','1カップ弱（量はお好みで）'],['塩','小さじ2〜3（茹でる時用）'],['きな粉','お好みで']],steps:['さつまいもの皮をむき、切って水にさらす','塩を加えた水で茹でる（茹で汁は残しておく）','さつまいもを潰して半分に分ける','半分のさつまいもに砂糖を入れ、火にかけて餡を作る','残り半分のさつまいもに小麦粉と茹で汁を加えてこねる（皮を作る）','蒸し器にシートを敷く','餡をピンポン玉の大きさに丸め、皮で包む','潰して表面を整える','蒸し器に入れて火にかける','きな粉をまぶす'],note:'※小麦粉の量が多いと皮が固くなります。※蒸し器専用鍋がない場合は沸騰したお湯に団子を入れ、浮いてくるまで茹でても作れます。'},
+      {id:'pro57',name:'スフレパンケーキ',serv:'3個分',url:'https://www.youtube.com/watch?v=aMflFYc30es',ing:[['卵黄','2個'],['牛乳','24g'],['薄力粉','35g'],['ベーキングパウダー','1g'],['卵白','2個（74g前後）'],['レモン汁','1g'],['グラニュー糖','25g'],['米油','適量'],['水','適量']],steps:['卵黄と卵白を分ける','卵黄のボウルに牛乳を入れる','薄力粉とベーキングパウダーは合わせておく','卵黄と牛乳をよく混ぜる','粉類を振るいながら入れて混ぜる','卵白にレモン汁、グラニュー糖を加える','泡が立ったら砂糖を加える','メレンゲを生地と合わせる','フライパンに油を塗り温める','一度フライパンを火から外し温度を下げる','弱火にして、絞り袋で生地を絞っていく','水を回し入れる','フタをして焼く','残りの生地を絞って重ねる','水を回し入れて焼く','ひっくり返して裏面を焼く']},
+      {id:'pro60',name:'ガトーショコラ',serv:'5号（15cm丸型）1台分',url:'https://www.youtube.com/watch?v=YJaheX0EcqY',ing:[['卵黄','54g（3個）'],['グラニュー糖（卵黄用）','30g'],['無塩バター','45g'],['板チョコ（ブラック）','85g'],['生クリーム（35%）','90g'],['卵白','100g前後（3個）'],['グラニュー糖（メレンゲ用）','80g'],['薄力粉','30g'],['ココアパウダー','40g'],['溶けない粉糖','適量']],steps:['バター・チョコレート・生クリームを大きめのボウルに細かく入れる','薄力粉とココアパウダーをクッキングシートの上に振るっておく','卵を卵黄と卵白に分ける','型紙を用意して型にセットする','卵黄にグラニュー糖を加えてすぐに混ぜる','バター・チョコ・生クリームのボウルをレンジで加熱してよく混ぜる','卵黄を加えて混ぜる','オーブンを予熱する','卵白にグラニュー糖を一気に入れてメレンゲを立てる','メレンゲの半分を卵黄・チョコのボウルに加える','振るった粉類を加えて混ぜる','残りのメレンゲを加える','型に生地を入れてよく混ぜて馴染ませる','空気を抜き、予熱したオーブンで焼く','粗熱が取れたらラップをして冷蔵庫で休ませる','溶けない粉糖をかけて完成']},
+      {id:'pro62',name:'ベイクドチーズケーキ',serv:'5号（15cm丸型）1台分',url:'https://youtube.com/watch?v=Z2zxd23pAIk',ing:[['クリームチーズ','200g'],['グラニュー糖','70g'],['サワークリーム','90g'],['全卵','1個（54g〜60g）'],['薄力粉','30g'],['生クリーム（35%）','200g'],['レモン果汁（1/2個）','15g'],['ビスケット（底生地）','70g'],['加塩バター（底生地）','30g']],steps:['チーズは常温に戻しておく','型に型紙を敷いておく','ビスケットを袋に入れて粉々にする','バターを電子レンジで溶かす','溶けたらビスケットに混ぜて馴染ませる','型に流し均一にならす','冷蔵庫で冷やし固める','オーブンを予熱する','チーズにグラニュー糖、サワークリームを入れて混ぜる','卵を加えて混ぜる','薄力粉を振るって加え、粉気がなくなるまで混ぜる','生クリームを加えて混ぜる','レモン汁を加えて混ぜる','生地を濾す','冷やしておいた底生地に生地を流す','空気を抜いて、予熱したオーブンで焼く','ラップをして冷蔵庫で一晩休ませる']},
+      {id:'pro58',name:'バスクチーズケーキ',serv:'φ15cm丸型1台分',url:'https://www.youtube.com/watch?v=B6euBpHOQpw',
+       ing:[['クリームチーズ','400g'],['グラニュー糖','100g'],['卵','3個'],['薄力粉','10g'],['レモン果汁','10g'],['生クリーム','200g']],
+       steps:['クリームチーズに砂糖を加えて混ぜる','卵も加えて混ぜる','振るっておいた粉も加えて混ぜる','レモン果汁を加えて混ぜる','生クリームを入れて混ぜる','生地を裏漉しする','予熱したオーブンで焼く','冷蔵庫でしっかり冷やす']},
+    ],
+  },
+    'パスタ・麺':[
+      {id:'pro4',name:'ペペロンチーノ',url:'https://www.youtube.com/watch?v=Jx-tqntWPCM',ing:[['パスタ','100g'],['にんにく','2片'],['オリーブオイル','大さじ1'],['赤唐辛子','1本'],['水','350cc'],['コンソメ','小さじ1'],['塩','2つまみ'],['オリーブオイル（仕上げ用）','大さじ1'],['醤油','お好みで']],steps:['にんにくを下処理して粗みじん切りにする','フライパンにオリーブオイルとにんにくを入れて火にかける','唐辛子を入れる','水を入れて沸かし、コンソメ・塩・パスタを入れる','オリーブオイルを加える','彩りにパセリをかける']},
+      {id:'pro6',name:'トマトパスタ',url:'https://www.youtube.com/watch?v=TWe1jMtLmzY',ing:[['パスタ（1.4mm）','100g'],['トマト缶','1/2缶'],['にんにく','1片'],['オリーブオイル（炒め用）','大さじ1'],['水','340cc'],['コンソメ','小さじ1と2/3'],['塩','1つまみ'],['砂糖','小さじ1'],['オリーブオイル（仕上げ用）','小さじ1'],['コショウ','適量'],['粉チーズ','お好みで']],steps:['フライパンにオリーブオイル大さじ1とおろしにんにくを入れて炒める','トマト缶1/2缶を入れて煮詰める','水・コンソメ・塩・砂糖を加えて沸かす','パスタを入れ、中火で水分を飛ばしながら5分煮る','仕上げにオリーブオイル小さじ1とコショウを加えて完成']},
+      {id:'pro11',name:'ナポリタン',url:'https://www.youtube.com/watch?v=uCbg_uS9aEU',ing:[['パスタ','100g'],['マッシュルーム','2個（約50g）'],['ウインナー','3本（約50g）'],['玉ねぎ','1/4個（約50g）'],['ピーマン','小1個'],['ケチャップ','大さじ4（60g）'],['バター','10g'],['サラダ油','小さじ2'],['塩','適量'],['粉チーズ','少々'],['乾燥パセリ','お好みで']],steps:['ウインナーを斜めに切る','玉ねぎを薄切りにする','マッシュルームは根元を取って薄切りにする','ピーマンはヘタとタネを取って細切りにする','フライパンでサラダ油を温める','ウインナー・玉ねぎを炒めてケチャップで煮詰める','マッシュルームも加えて炒める','パスタを茹でる','バターとピーマンを加えて炒める','パスタを投入して混ぜる']},
+      {id:'pro22',name:'きのこクリームパスタ',serv:'2人前',url:'https://www.youtube.com/watch?v=_B2mOg_SkqA',ing:[['スパゲッティ（1.8mm）','200g'],['オリーブオイル','40g'],['にんにく','1片'],['ベーコン','40g'],['なめこ','70g'],['しめじ','100g'],['舞茸','100g'],['白ワイン','40g'],['生クリーム','40g（苦手な方は省略可）'],['粉チーズ','8g'],['塩・黒胡椒','適宜'],['パスタ湯','200cc程度']],steps:['ベーコン・にんにくをみじん切りにする','しめじ・舞茸はほぐしてフライパンに入れる','なめこは水で軽く汚れを取る','しめじ・舞茸を乾煎りする','オリーブオイルでにんにく・ベーコン・しめじの順に炒める','白ワイン・生クリームを入れる','パスタを茹でる','ソースとパスタを絡める','仕上げに粉チーズを加える']},
+      {id:'pro64',name:'ボロネーゼ',serv:'4〜5人前',url:'https://www.youtube.com/watch?v=o-KnvGFS_5c',ing:[['牛肉','400g'],['サルシッチャ','100g'],['玉ねぎ','150g'],['にんじん','50g'],['セロリ','50g'],['オリーブオイル','15cc'],['トマトペースト','20g'],['白ワイン','150cc'],['水','300cc'],['牛乳','50cc'],['ローリエ','1枚'],['タイム','適量'],['ローズマリー','適量'],['塩','適量'],['黒胡椒','適量'],['タリアテッレ','適量'],['パルミジャーノ・レッジャーノ','適量']],steps:['肉を角切りに切る','ソーセージをみじん切りにする','野菜を小さい角切りにする','フライパンに脂をひく','野菜に塩を振って20分くらい炒める','別のフライパンに脂をひく','肉に塩を振り焼く','胡椒をかける','肉をひっくり返し焼き色をつける','白ワインを加える','ソーセージと野菜を加えて炒める','水を加えて煮込む','トマトペーストを加える','ローリエを入れて20分煮る','最後に牛乳を加えて混ぜる','5分くらいとろ火で煮る','麺を茹でる（2ℓの水に対して塩30g）','別のフライパンにソースを入れ、茹で汁と水を加えて火にかける','麺を加えて混ぜる','オリーブオイルを加えて火を切り混ぜる']},
+      {id:'pro59',name:'カルボナーラ',serv:'1人前',url:'https://www.youtube.com/watch?v=GffgVEa7s-o',ing:[['スパゲッティ（1.9mm）','100g'],['ベーコンブロック','40g'],['全卵（常温に戻す）','1個'],['粉チーズ','20g'],['粗挽きコショウ','適量'],['オリーブオイル','適量'],['塩','適量']],steps:['ボウルに全卵・粉チーズ・コショウを入れてよく混ぜる','フライパンにオリーブオイルを敷き、厚切りにしたベーコンを炒める','外側がカリカリになったら水を少量加えてフライパンの旨味を落とし、①のボウルに加える','フライパンに1リットルのお湯を沸かし、塩分濃度0.5%の塩でパスタを茹でる','茹で上がったパスタをボウルのソースと和え、フライパンで湯煎しながらトロッとするまで混ぜる','味見して必要に応じて塩で調味し、仕上げに粉チーズと粗挽きコショウをたっぷりかける']},
+      {id:'pro23',name:'海老とトマトのスパゲッティ',serv:'1人前',url:'https://www.youtube.com/watch?v=C6JonNtx76k',ing:[['スパゲッティ（1.8mm）','100g'],['イタリアンパセリ','適宜'],['赤海老（海老出汁用）','5尾'],['にんにく（海老出汁用）','1片'],['玉ねぎ（海老出汁用）','15g'],['人参（海老出汁用）','15g'],['セロリ（海老出汁用）','15g'],['トマトホール','1/2缶'],['白ワイン','20g'],['水','180ml'],['オリーブオイル（海老出汁用）','30g'],['ミニトマト（ソース用）','100g'],['ローズマリー','適量'],['オリーブオイル（ソース用）','15g']],steps:['海老の下処理をしてカット・下味をつける','野菜のクズを切る','ミニトマトを半分に切る','にんにくを潰す','オリーブオイルを温め、海老の頭と殻を炒める','野菜のクズを加えて炒める','白ワイン・トマトホール・水を加えて煮る','オリーブオイルでにんにくを炒める','ミニトマトを焼く','海老の出汁をザルでこして煮詰める','パスタを茹でる','ソースの鍋にパスタを投入して混ぜ、海老を加える','ローズマリーを仕上げに加える']},
+      {id:'pro15',name:'無限油そうめん',url:'https://www.youtube.com/watch?v=I21PdewwZNQ',ing:[['そうめん','100g（2束）'],['白だし','大さじ1と小さじ2'],['水','大さじ1と1/2'],['砂糖','小さじ1/3'],['ごま油','大さじ1'],['にんにく','半片'],['小ねぎ','たっぷり'],['卵黄','1個分'],['黒胡椒','適量'],['ラー油','適量'],['いりごま','適量'],['レモン汁・ブラックペッパー','お好みで'],['※浮雲白だしスープ用：卵白','余った分'],['※浮雲白だしスープ用：白だし','小さじ2'],['※浮雲白だしスープ用：水','90cc'],['※浮雲白だしスープ用：小ネギ','適量']],steps:['ボウルに白だし・砂糖・ごま油・水・すりおろしにんにくを入れて混ぜ、冷蔵庫で冷やす','卵黄と卵白を分ける（卵白は耐熱容器へ）','卵白に白だし・水を加えて加熱し、小ねぎを乗せる（浮雲白だしスープ）','そうめんを茹でて冷まし、水気をよく切る','そうめんとタレをよく混ぜ合わせる','器に盛り付けて小ネギを入れる','卵黄を乗せ、いりごま・ラー油をかける']},
+    ],
+  easy:{
+    '中華':[
+      {id:'easy_cn0',name:'豆腐と小松菜のうま炒め',url:'https://www.youtube.com/watch?v=vsr-vUGfsZs',ing:[['木綿豆腐','1丁'],['小松菜','3株'],['にんにく','1かけ'],['唐辛子','1個'],['油','大さじ2/3'],['醤油','大さじ2/3'],['オイスターソース','大さじ1/2'],['塩','小さじ1/3'],['砂糖','小さじ1/3'],['鶏がらスープ','小さじ1/2'],['水','大さじ1']],steps:['キッチンペーパーで豆腐表面の水分を取る','小松菜を食べやすい大きさに切り、芯と葉に分けて洗い水を切る','にんにくを潰して粗みじん切りにする','唐辛子を小さく切る','フライパンに油をひいて温める','豆腐を食べやすい大きさに切って焼き色をつけ、裏返す','にんにく・唐辛子を入れて軽く炒める','小松菜の芯・葉の順に入れて炒める','弱火にして調味料を入れ、まんべんなく混ぜて完成']},
+      {id:'easy_cn1',name:'白菜の炒め物',serv:'2人前',url:'https://www.youtube.com/watch?v=UcC6gRjJdPE',ing:[['白菜','400g'],['豚ひき肉','150g'],['にんにく','1かけ'],['油','小さじ2'],['塩','1つまみ'],['豆板醤','小さじ1'],['酒','小さじ1'],['醤油','大さじ1'],['オイスターソース','小さじ1'],['鶏がらスープ','小さじ1/2'],['水（水溶き片栗粉用）','大さじ2'],['片栗粉','小さじ1']],steps:['白菜を真ん中から切り太めの千切りにする','葉と芯に分けて洗う','にんにくを小さく切る','水溶き片栗粉を作る','フライパンに油をひいて温める','芯を炒めて一度取り出す','油をひいたフライパンでひき肉を炒める','調味料・にんにくを加えて炒め、芯を戻して炒める','葉も加える','味付けをして混ぜる','水溶き片栗粉を加えて炒める']},
+      {id:'easy_cn2',name:'ネギ豆腐',url:'https://www.youtube.com/watch?v=UIuq9hMmvCI',ing:[['木綿豆腐','400g'],['白ねぎ','1本'],['油','大さじ1'],['醤油','大さじ1'],['砂糖','小さじ1'],['塩','小さじ2/3'],['鶏がらスープ','小さじ1'],['水','120cc'],['オイスターソース','大さじ1'],['片栗粉','小さじ1'],['胡椒','適量']],steps:['白ねぎを大きめに切る','ボウルに移し、調味料と合わせて混ぜる','フライパンに油をひいて温める','フライパンに塩を振り、豆腐を焼く','豆腐をスプーンで切る','ひっくり返して両面を焼く','ねぎと合わせ調味料を加える','フタをせず5分煮込む']},
+      {id:'easy_cn3',name:'大葉なす',url:'https://www.youtube.com/watch?v=TPW7rcKians',ing:[['なす','2個（約260g）'],['大葉','10枚'],['生姜','5g'],['油','小さじ2'],['醤油','小さじ1'],['オイスターソース','小さじ1'],['砂糖','小さじ1/2'],['鶏がらスープ','小さじ1/3'],['ポン酢','少々'],['片栗粉','大さじ1']],steps:['なすのヘタを取る','なすを切ってボウルに入れ、塩を振ってよく混ぜて5分おく','大葉を丸めて切る','生姜を千切りにする','なすを洗い塩分を落として軽く絞り、片栗粉をまぶす','フライパンに油をひいてなすを焼き、一旦取り出す','生姜・調味料・大葉を加えて炒める','なすを戻して調味料に絡ませる']},
+      {id:'easy_cn4',name:'茄子の簡単レシピ',serv:'2人前',url:'https://www.youtube.com/watch?v=G8cOUOJa2iM',ing:[['茄子','2本（約240g）'],['生姜','10g'],['小ねぎ','2本'],['油','大さじ1未満'],['酒','大さじ2'],['醤油','大さじ1'],['砂糖','小さじ2/3'],['甜麺醤','小さじ2/3'],['ごま油','少々'],['片栗粉','大さじ1'],['酢（茄子漬け用）','少々']],steps:['なすのヘタを取って切る','水を入れたボウルに酢を加え、なすを浸す','生姜を千切りにする','小ねぎを輪切りにする','なすの水を切り、片栗粉をまぶして混ぜる','フライパンに油をひきなすを炒める','合わせ調味料を作る','なすを一旦取り出す','フライパンに油をひき生姜を炒める','合わせ調味料を入れ混ぜながら煮込む','なすを入れて調味料を絡める','ごま油・小ねぎを加えて混ぜる']},
+      {id:'easy_cn5',name:'長芋と鶏胸肉の激うまレシピ',url:'https://www.youtube.com/watch?v=zZ13haAzCbo',ing:[['長芋','290g'],['鶏胸肉','230g'],['にんにく','1かけ'],['小ねぎ','2本'],['酒','大さじ1'],['水','大さじ2'],['醤油','大さじ2/3'],['鶏がらスープ','小さじ2/3'],['砂糖','小さじ2/3'],['中国たまり醤油','少々'],['胡椒','少々'],['ポン酢','小さじ1'],['水（下味用）','大さじ1'],['醤油（下味用）','小さじ1'],['酒（下味用）','小さじ1'],['胡椒（下味用）','少々'],['塩（下味用）','少々'],['片栗粉（下味用）','小さじ1']],steps:['長芋の皮をむき乱切りにする','鶏胸肉を食べやすい大きさに切る','ボウルに移し下味をつけ、汁気がなくなるまで混ぜる','にんにくを粗みじん切りにする','にんにく・調味料・水を合わせる','小ねぎを輪切りにする','フライパンに油をひき、鶏胸肉・長芋を焼く','調味料を加えて炒める','小ねぎを加えて混ぜる']},
+      {id:'easy_cn6',name:'茄子・玉ねぎ・ピーマン炒め',url:'https://www.youtube.com/watch?v=aXkMqBhTWfs',ing:[['なす','1個（約140g）'],['玉ねぎ','1個（約220g）'],['ピーマン','2個'],['油','小さじ1'],['片栗粉','小さじ1'],['塩','1つまみ'],['酒','大さじ1'],['にんにくチューブ','2〜3cm'],['醤油','小さじ2'],['オイスターソース','小さじ1'],['砂糖','小さじ1/3'],['胡椒','適量'],['ごま油','少々'],['ポン酢','少々']],steps:['なすのヘタを取り乱切りにして塩を振っておく','玉ねぎを乱切りにする','ピーマンの種を取り乱切りにする','なすを洗って塩気を落とし絞る','なすに片栗粉をまぶす','フライパンに油をひきなすを炒めて一旦取り出す','フライパンに油をひき玉ねぎとピーマンを炒める','塩・酒を振る','なすを加えて炒める','調味料を加えて炒める']},
+      {id:'easy_cn7',name:'激うま豚キャベツ炒め',url:'https://www.youtube.com/watch?v=HGf73YZf_fQ',ing:[['キャベツ','1/4個（約350g）'],['豚バラ肉','150g'],['にんにく','1かけ'],['油','大さじ1/2'],['豆板醤','小さじ1'],['日本酒','少々'],['醤油','大さじ1'],['砂糖','小さじ1'],['中華だし','小さじ2/3'],['ポン酢','少々']],steps:['キャベツを食べやすい大きさに切り洗う','にんにくをみじん切りにする','豚肉をキャベツの大きさに合わせて切る','フライパンに水を入れ、沸いたら肉を入れて火を止める','豚肉を取り出し水気を取る','フライパンに油をひき豚肉を炒める','調味料・キャベツを加えて炒め混ぜる']},
+      {id:'easy_cn8',name:'豆腐レシピ（卵と焼くだけ）',url:'https://www.youtube.com/watch?v=PvI4cVBhFOc',ing:[['木綿豆腐','1丁と1/2（約170g）'],['卵','1個'],['小ねぎ','2本'],['油','小さじ1.5'],['ごま油','少々'],['塩','小さじ1/4'],['鶏がらスープ','小さじ1'],['胡椒','適量'],['小麦粉','大さじ1']],steps:['豆腐をビニールに入れる','卵を割り入れる','調味料・小ねぎを入れる','豆腐を潰しながら揉み込む','小麦粉を加えてさらに揉み込む','袋を閉め、角を大きめに切る','フライパンに油をひく','タネを絞り出して焼く','ごま油を加え、蓋をして焼く']},
+      {id:'easy_cn9',name:'激うまオクラ',url:'https://www.youtube.com/watch?v=Lm-3r00yjMI',ing:[['オクラ','13本'],['にんにく','1かけ'],['油','大さじ1'],['オイスターソース','大さじ1'],['砂糖','小さじ1'],['塩','小さじ2/3'],['水','大さじ1'],['鶏がらスープ','小さじ2/3'],['塩（洗う用）','小さじ2'],['油（茹でる用）','少々'],['塩（茹でる用）','小さじ1']],steps:['オクラを塩で洗う','火をつけたフライパンにお湯をたっぷり入れる','塩・油・オクラを入れて1分茹でる','オクラを取り出して水に浸ける','洗って水を切る','にんにくを粗みじん切りにする','オクラのヘタを落とし大きめに切る','フライパンに油をひきにんにくを炒める','オクラを炒める','味付けをしてよく混ぜる']},
+      {id:'easy_cn10',name:'激うま大葉長芋',url:'https://www.youtube.com/watch?v=K99O7b_9RwE',ing:[['長芋','320g'],['大葉','10枚'],['にんにく','2かけ'],['油','小さじ1.5'],['片栗粉','大さじ1'],['砂糖','小さじ1/3'],['醤油','小さじ2'],['酒','小さじ1'],['ポン酢','小さじ1'],['オイスターソース','小さじ1'],['ごま油','少々'],['一味唐辛子','少々']],steps:['長芋の皮をむき乱切りにする','水で洗い、水を切る','片栗粉をまぶして混ぜる','大葉を大きめの粗みじん切りにする','にんにくを粗みじん切りにする','フライパンに油をひき長芋を炒める','合わせ調味料を作る','フライパンににんにく・大葉・調味料を加えて炒める']},
+    ],
+    '肉料理':[
+      {id:'easy0',name:'チキンステーキ',serv:'2人前',url:'https://www.youtube.com/watch?v=AjJt858NHTM',ing:[['鶏もも肉','2枚'],['塩','少々'],['オリーブオイル','大さじ2'],['玉ねぎ（みじん切り）','1/4個'],['しょうゆ（たれ）','大さじ2'],['みりん（たれ）','大さじ2'],['水（たれ）','大さじ2'],['酒（たれ）','大さじ1'],['砂糖（たれ）','小さじ1']],steps:['鶏肉両面に塩をふる','皮を伸ばしながらそのまま10分焼く','皮面がパリッとしたら裏返して2〜3分焼き、取り出す','玉ねぎを炒めてたれの材料を加える']},
+      {id:'easy1',name:'豚とレタスのうまみ蒸し',serv:'2〜3人前',url:'https://www.youtube.com/watch?v=f-QYis8ChtE',ing:[['豚バラ薄切り肉','200〜250g'],['レタス','1個'],['にんにくすりおろし（下味）','1かけ'],['しょうゆ（下味）','大さじ1'],['酒（下味）','大さじ1'],['しょうゆ（味付け）','大さじ1'],['ごま油（味付け）','大さじ1'],['白いりごま（味付け）','大さじ1'],['塩','少々'],['糸唐辛子','お好みで']],steps:['豚肉をキッチンバサミで切ってフライパンに入れる','レタスをちぎってフライパン全体に広げる','中火にかけてふたをし、ジュージューしてきたら弱めの中火で5分ほど蒸す'],note:'※フライパンは28cmの大きめを使用。入らなければ鍋でもOK。'},
+      {id:'easy2',name:'豚バラとナスの甘辛うまみ炒め',url:'https://www.youtube.com/watch?v=eI39H11HSro',ing:[['豚バラ薄切り肉','200g'],['なす（小）','3本'],['塩','少々'],['玉ねぎ','1/4個'],['万能ねぎ','適宜'],['酒（たれ）','大さじ1'],['砂糖（たれ）','小さじ1'],['しょうゆ（たれ）','大さじ1と1/2'],['みりん（たれ）','大さじ1と1/2'],['サラダ油','適宜']],steps:['豚肉をフライパンで焼き、塩をふる','玉ねぎを薄切りにして肉と一緒に炒める','豚と玉ねぎを一旦取り出す','なすを大きめの乱切りにしてフライパンで炒める','調味料を合わせてタレを作る','なすに塩を振り、豚と玉ねぎを戻し炒める','タレを加えて絡める','仕上げにねぎを乗せる']},
+      {id:'easy3',name:'豚プルコギ',serv:'2人前',url:'https://www.youtube.com/watch?v=ciwEYRKhPVU',ing:[['豚小間切れ肉または豚バラ肉','200g'],['玉ねぎ','1/2個'],['にんじん','1/2本'],['万能ねぎ','3〜4本'],['サニーレタス・青じそ・しょうゆ','お好みで'],['しょうゆ（たれ）','大さじ2'],['酒（たれ）','大さじ2'],['ごま油（たれ）','大さじ2'],['白煎りごま（たれ）','大さじ1'],['砂糖（たれ）','大さじ1'],['にんにくすりおろし（たれ）','1かけ'],['しょうがすりおろし（たれ）','1かけ']],steps:['玉ねぎを縦に薄切り、にんじんを斜め薄切りにしてから細切り、ねぎを5cmに切る','ボウルに豚肉を入れてたれをもみ込み、玉ねぎ・にんじんを加えてさっと絡める','フライパンを中火で熱して炒め、野菜がしんなりして肉の色が変わったらしょうゆで味を調える','仕上げに万能ねぎを加えてさっと混ぜ、お好みで葉野菜を添えて巻いていただく']},
+      {id:'easy24',name:'節約もやしバーグ',serv:'2〜3人前',url:'https://www.youtube.com/watch?v=cTzJsrPknog',ing:[['もやし','1袋（200g）'],['ひき肉','250g'],['片栗粉','大さじ1'],['オイスターソース','大さじ1'],['塩','小さじ1/2'],['コショウ','小さじ1/2']],steps:['もやしを細かく砕く','ポリ袋にもやしを入れ片栗粉をまぶす','ひき肉・調味料を入れて全体をよく混ぜ合わせる','小さめのフライパンに肉ダネを入れて広げる','ガイドラインを入れておく','蓋をして焼く','裏返して焼く','タレをつけていただく']},
+      {id:'easy26',name:'豆腐つくね',serv:'3人前',url:'https://www.youtube.com/watch?v=CmRy3Hw9Sro',ing:[['鶏むねミンチ','200g'],['豆腐','150g'],['塩','2g（小さじ1/3）'],['薄口醤油','小さじ1/2'],['酒','小さじ1/2'],['おろし生姜','小さじ1'],['すり胡麻','小さじ1'],['片栗粉','大さじ1'],['大葉','4〜5枚'],['油','小さじ1']],steps:['豆腐をペーパーで包み軽くほぐす','袋に入れた肉に下味をつけてよく揉み込む','豆腐・他の材料を加えて混ぜ合わせる','袋の端を切る','フライパンに油をひき肉ダネを入れる','全体に広げてガイドラインを入れておく','蓋をして焼く','裏返して焼く','調味料を煮詰めてタレを作る']},
+      {id:'easy_m1',name:'だしチャーシュー',url:'https://www.youtube.com/watch?v=IVQ_1zy14EI',ing:[['豚ブロック','300g'],['醤油','大さじ1'],['酒','大さじ1'],['砂糖','大さじ1'],['顆粒だし','小さじ2'],['にんにく','小さじ1'],['生姜','小さじ1']],steps:['耐熱皿にお肉を置き、フォークで穴をあける','調味料を加えて揉み込む','ラップをして電子レンジで加熱する','裏返してさらに加熱する']},
+    ],
+    '揚げもの・フライ':[
+      {id:'easy7',name:'サクサクちくわ',url:'https://www.youtube.com/watch?v=e8L_VtXePDc',ing:[['ちくわ','4本'],['餃子の皮','8枚（ワンタンの皮4枚でもOK）'],['ベビーチーズ','2個'],['油','大さじ3'],['青のり','お好みで']],steps:['ちくわを半分に切る','チーズを4等分に切る','全てのちくわにチーズを入れる','皮でちくわを巻く','繋ぎ目を下にして焼く','全体的に焼き目をつける']},
+      {id:'easy14',name:'ちくわの磯辺揚げ',url:'https://www.youtube.com/watch?v=N_ZOFu1Kfak',ing:[['ちくわ','4本'],['ベビーチーズ','2個'],['油','大さじ2'],['薄力粉または米粉','大さじ2'],['片栗粉','大さじ2'],['水','大さじ3'],['青のり','小さじ1/2'],['塩またはコンソメ','小さじ1/2']],steps:['ちくわを4等分、チーズを8等分に切る','チーズをちくわに入れる','ポリ袋に調味料を入れてよく揉む','ちくわを袋に入れてよく絡める','フライパンに油をひきちくわを焼く']},
+      {id:'easy15',name:'ささみの唐揚げ',url:'https://www.youtube.com/watch?v=E6fC-rOkZy4',ing:[['ささみ','3本'],['醤油','大さじ1'],['みりん','小さじ2'],['創味シャンタンまたは鶏ガラ','小さじ1'],['ブラックペッパー','適量'],['片栗粉','大さじ3'],['油','大さじ3']],steps:['フォークでささみを刺す','ポリ袋にささみを入れて広げる','綿棒でお肉を叩いて薄く広げる','調味料を入れてよく揉み込む','袋の口を閉めて10分置く','フライパンに片栗粉を広げてお肉を入れる','お肉に片栗粉をつける','油をひいて焼く','裏返して両面揚げ焼きにする']},
+      {id:'easy17',name:'ただ焼くだけ【鶏の唐揚げ】',url:'https://www.youtube.com/watch?v=M_U7TrECrP4',ing:[['鶏もも肉','300g'],['醤油','大さじ1'],['酒','大さじ1'],['創味シャンタンまたは鶏ガラ','大さじ1/2'],['生姜チューブ','3cm'],['にんにくチューブ','3cm'],['ブラックペッパー','適量'],['片栗粉','大さじ2'],['米粉または薄力粉','大さじ2'],['油','大さじ3']],steps:['ポリ袋にお肉と調味料を入れる','フタをして10分置く','フライパンに粉類を入れて混ぜる','鶏肉を入れて粉をまぶす','皮面を裏にし、油をひいてお肉を焼く']},
+      {id:'easy20',name:'揚げずに簡単！おさつポテト',url:'https://www.youtube.com/watch?v=cG1LW2VK1G4',ing:[['さつまいも','1〜2個（約300g）'],['片栗粉','大さじ1.5'],['油','大さじ2'],['砂糖','小さじ2'],['塩','少々'],['醤油','小さじ1'],['黒ごま','お好みで']],steps:['さつまいもを乱切りにして水に浸ける','水を切り、ラップをして電子レンジで加熱する','ポリ袋にさつまいもと片栗粉を入れて馴染ませる','フライパンに油をひき焼く','弱火にして調味料を入れて混ぜる']},
+      {id:'easy_f1',name:'豆腐天ぷら',url:'https://www.youtube.com/watch?v=BsOwqB7L3IY',ing:[['豆腐','150g'],['片栗粉','大さじ3'],['油','適量'],['お好きな野菜','適量'],['青のり','お好みで']],steps:['ボウルに豆腐と片栗粉を入れて混ぜる（天ぷら液）','ちくわやさつまいもなど好きな具材を切る','天ぷら液をつけてフライパンに油をひいて揚げる']},
+    ],
+    'パスタ・麺':[
+      {id:'easy_natto2',name:'納豆そば',url:'https://www.youtube.com/watch?v=jOFHeeGnbxY',ing:[['そば','2玉（約280g）'],['長ねぎ（小口切り）','適量'],['青海苔','適量'],['そばつゆ原液（ぶっかけつゆ）','100cc'],['水（ぶっかけつゆ）','800cc'],['ひきわり納豆','3パック（約150g）'],['生卵','2個'],['ぶっかけつゆ（納豆かけ用）','大さじ1']],steps:['そばつゆ原液と水を混ぜてぶっかけつゆを作り、冷蔵庫で冷やす','ひきわり納豆にぶっかけつゆ大さじ1と生卵を加えてよく混ぜる','そばを茹でて氷水でしめる','水気を切って器に盛り付ける','冷やしたぶっかけつゆをかける','納豆をかける','長ねぎと青海苔を振る']},
+      {id:'easy4',name:'焼きそば',serv:'2人前',url:'https://www.youtube.com/watch?v=0Aj58AKipa0',ing:[['市販の焼きそば麺（ソース付き）','2玉'],['付属のソース','1袋'],['豚バラ薄切り肉','200g'],['キャベツ','1/6玉'],['玉ねぎ','1/2個'],['もやし','1袋'],['酒','大さじ1'],['サラダ油','大さじ2'],['しょうゆ','大さじ2と1/2'],['紅生姜・塩・青のり','適宜']],steps:['玉ねぎを薄切り、キャベツをちぎり、もやしを水に浸けておく','フライパンで玉ねぎを炒め、豚バラ肉を加える','キャベツを加えてこんがりしたら塩をして取り出す','同じフライパンにサラダ油をひき、焼きそば麺をこんがり焼き付ける','酒・付属ソース・醤油大さじ1と1/2を加える','別フライパンで水気を切ったもやしに醤油大さじ1を加えて強火で炒める']},
+      {id:'easy5',name:'トマトクリームパスタ',url:'https://www.youtube.com/watch?v=aVONBygU2UY',ing:[['オリーブオイル','大さじ1'],['ベーコン','約5枚'],['おろしニンニク','大さじ1'],['カットトマト缶','1缶'],['水','300ml'],['顆粒コンソメ','小さじ1'],['塩コショウ','適量'],['パスタ','160g'],['無塩バター','20g'],['牛乳','100ml'],['バジル','適宜']],steps:['フライパンにオリーブオイルをひき、ベーコン・にんにくを中火で炒める','カットトマト・水・コンソメ・塩コショウを加え、強火でひと煮立ちさせる','パスタを加え、蓋をして袋の表記時間より2分短く茹でる','弱火にしてバターを加えて溶かし混ぜる','牛乳を加えよく混ぜ、お好みでバジルを散らす']},
+      {id:'easy_noodle1',name:'サッポロ一番味噌ラーメン',serv:'3人前',url:'https://www.youtube.com/shorts/MXEQYffw5Zc',ing:[['サッポロ一番みそラーメン','3袋'],['豚肉','適量'],['カット野菜','適量'],['醤油','適量'],['もやし','適量'],['ネギ','適量']],steps:['フライパンで豚肉・カット野菜を炒める','醤油で味付けをする','鍋でラーメンを茹でる','粉末スープを入れる','炒めた肉と野菜を加える','もやし・ネギを入れる']},
+    ],
+    'タッパー料理':[
+      {id:'easy12',name:'タッパーラーメン',url:'https://www.youtube.com/watch?v=pS62tcVEdrc',ing:[['焼きそば袋麺','1袋'],['醤油','大さじ2'],['砂糖','小さじ1/2'],['ごま油','小さじ1'],['お吸い物の素','1袋'],['水','250〜300ml'],['小ねぎ・ゆで卵','お好みで']],steps:['タッパーに調味料と水を入れて混ぜる','蓋を斜めに置き、先端を切った袋麺を乗せる','3分加熱する','汁を軽く混ぜ、麺を入れる','好きな具材をトッピングする'],note:'※水の量はお好みで味の濃さを調整してください。'},
+      {id:'easy16',name:'タッパーだし巻き卵',url:'https://www.youtube.com/watch?v=VS6CsvEZEuE',ing:[['卵（M）','2個'],['絹ごし豆腐','150g'],['松茸のお吸い物の素','1袋']],steps:['ポリ袋に材料を全部入れて揉み込む','タッパーに袋をセットし、口を軽く丸める','5分加熱する']},
+      {id:'easy22',name:'タッパーオムライス',url:'https://www.youtube.com/watch?v=HiYjJN-TYXU',ing:[['ごはん','約150g'],['ツナ缶','1缶'],['コンソメ','小さじ1/2'],['ケチャップ','大さじ2'],['卵（M）','2個'],['塩コショウ','少々'],['チーズ','お好みで']],steps:['タッパーにご飯・ツナ・ケチャップを入れて混ぜる','表面を平らにする','卵に下味をつけて混ぜる','ご飯にチーズを乗せ、卵を流し入れる','ラップをして加熱する','ケチャップ・パセリをかける']},
+      {id:'easy_t4',name:'タッパーで出来るカレーライス',url:'https://www.youtube.com/watch?v=tSXq2_K8LeY',ing:[['お好きな豚肉・野菜','適量'],['酒','少々'],['塩コショウ','少々'],['水','150ml'],['カレールウ','1かけら'],['ウスターソース・福神漬け','お好みで']],steps:['タッパーに肉・野菜を入れる','塩コショウ・酒・カレールウ・水を加えて電子レンジで加熱する','全体を混ぜて再度加熱する']},
+      {id:'easy_t5',name:'タッパーで出来るパスタ',url:'https://www.youtube.com/watch?v=9La2g09DqVg',ing:[['パスタ','100g（1束）'],['水','250ml'],['しめじ','少々'],['永谷園のお吸い物の素','1袋'],['醤油','小さじ1'],['バター','10g（またはマヨネーズ小さじ1）'],['ネギ・海苔','お好みで']],steps:['タッパーにパスタを折って入れる','水・しめじ・お吸い物の素を入れる','電子レンジで加熱する','醤油・バター（またはマヨネーズ）を加えて加熱する','お好みでネギをかける']},
+      {id:'easy_t6',name:'タッパー茶碗蒸し',url:'https://www.youtube.com/watch?v=Z8qIocJjkgQ',ing:[['卵','1個'],['ぬるま湯','150ml'],['永谷園のお吸い物の素','1袋'],['お好きな野菜','適量']],steps:['タッパーに卵を入れて溶く','別の容器に水を入れて加熱する','加熱したお湯を卵液に加える','お吸い物の素を加えてかき混ぜる','フタを斜めにおいて電子レンジで加熱する','お好みでネギなどを添える']},
+      {id:'easy_p1',name:'タッパーで出来る油そば',url:'https://www.youtube.com/watch?v=I7qbLbvvJks',ing:[['塩ラーメン麺','1袋'],['水','400ml'],['塩ラーメン粉末スープ','1/2袋'],['ごま油','大さじ1'],['酢','大さじ1'],['マヨネーズ・卵・ネギ・付属のごま','お好みで']],steps:['タッパーに麺と水を入れて電子レンジで加熱する','フタを斜めにおいてお湯を切る','調味料を加えて混ぜる','お好みでマヨネーズをかける','卵黄・ネギ・ごまをトッピングする']},
+      {id:'easy_sw9',name:'タッパーで作るガトーショコラ',url:'https://www.youtube.com/watch?v=Dud_fwdepHg',ing:[['チョコレート','2枚（100g）'],['卵','1個']],steps:['タッパーにチョコレートを小さくしながら入れる','レンジで1分半ほど加熱する','卵を加えて混ぜる','空気を抜いてレンジで2分加熱する','粗熱を取り冷蔵庫で2時間冷やす'],note:'※ミルクとダークの組み合わせがおすすめですが、どんな組み合わせでも美味しいです。400ml容量のタッパー使用。'},
+    ],
+    'サラダ':[
+      {id:'easy_sal2',name:'春雨サラダ',url:'https://www.youtube.com/watch?v=KMmYPl0KdRk',ing:[['春雨','80g'],['人参','45g'],['きゅうり','1本'],['卵','1個'],['ロースハム','50g'],['ネりからし','小さじ1'],['ガラスープの素','小さじ1'],['醤油','大さじ3'],['酢','大さじ1'],['砂糖','小さじ2'],['ごま油','大さじ1'],['いりごま','適量']],steps:['きゅうり・にんじん・ハムを細切りにする','緑豆春雨を袋表記の茹で時間+1分茹でる','流水で冷まし水気をよく切る','ペーパーを入れて冷蔵庫で10分置く','炒り卵を作る（水分は飛ばす）','ボウルにからし・ガラスープの素・醤油・酢・砂糖・ごま油を入れて混ぜる','きゅうりとにんじんを加えて５分置く','春雨・ハム・卵を加え、ごまをかけて混ぜる']},
+      {id:'easy_sal1',name:'ごぼうサラダ',url:'https://www.youtube.com/watch?v=JB3Vxw6Yr3A',ing:[['ごぼう','大1/2本（150g）'],['にんじん','5cm'],['砂糖（A）','小さじ1'],['塩（A）','小さじ1/4'],['サラダ油（A）','小さじ1/2'],['マヨネーズ（B）','大さじ3〜4'],['白いりごま（B）','大さじ1/2'],['溶きがらし（B）','小さじ1/2']],steps:['ごぼうを洗って細切りにする','小さめのフライパンか鍋で茹でる','にんじんも細切りにする','煮立ったらにんじんも入れて茹でる','火が通れば湯を切って鍋に戻す','砂糖・塩・サラダ油で下味をつける','火をつけて水分を飛ばす','粗熱を取り調味料を加える','白ごまをつぶしながら加えて混ぜる']},
+      {id:'easy6',name:'マカロニサラダ',serv:'4人前',url:'https://www.youtube.com/watch?v=B_umxVbpJ80',ing:[['マカロニ','120g'],['水（茹でる用）','1L'],['塩（茹でる用）','10g（小さじ2）'],['玉ねぎ','60g'],['きゅうり','1/2本'],['人参','40g'],['固茹で卵','2個'],['ロースハム（スライス）','60g（5〜6枚）'],['マヨネーズ（B）','80g'],['牛乳（B）','大さじ1'],['粒マスタード（B）','小さじ2'],['白ワイン酢（B）','小さじ2'],['ケチャップ（B）','小さじ1'],['イタリアンパセリ（B）','小さじ1'],['きび砂糖（B）','小さじ1/2'],['醤油（B）','小さじ1/8'],['こしょう（B）','4ふり'],['オリーブオイル','大さじ1'],['塩・こしょう','少々']],steps:['ボウルにBを混ぜ合わせてソースを作る','きゅうりと玉ねぎを薄切りにして塩揉みし、10分後に絞る。固茹で卵を粗みじん切りにする','人参を銀杏切りまたは半月切りにして電子レンジ600Wで2〜3分加熱する','ロースハムを半分に切り1cm幅の短冊切りにする','フライパンにオリーブオイルを熱しハムを中火で炒めて焼き色をつけ火を止める','鍋にマカロニを入れて表記時間より1分長く茹でる','水気をよく切り、ハムのフライパンに加えて中火で1分炒め、バットに出して粗熱を取る','ソースに冷めたマカロニを加えて全体を混ぜ、塩こしょうで調味する']},
+    ],
+    '浅漬け・漬け物':[
+      {id:'easy_s1',name:'冷凍きゅうり漬け',url:'https://www.youtube.com/watch?v=9_5qxtv7J6A',ing:[['きゅうり','2本'],['白だし','大さじ3'],['水','100ml'],['レモン汁','大さじ1'],['にんにく','少々']],steps:['きゅうりを洗って水気をふく','ジップロックに入れて半日以上冷凍する','冷凍きゅうりを流水に30秒当てて半解凍し一口大に切る','絞って水分を捨てる','調味料を加えもみ込んで冷蔵庫で1時間以上冷やす']},
+      {id:'easy_s3',name:'無限白菜漬け',url:'https://www.youtube.com/watch?v=5xXIbHQbiT0',ing:[['白菜','400g'],['塩','小さじ1/2'],['醤油','大さじ2'],['酢','大さじ1'],['砂糖','大さじ1'],['ごま油','大さじ1/2'],['白ごま','適量'],['にんにく','小さじ1/2']],steps:['洗った白菜を1cm幅に切る','ジップロックに入れる','塩を加えて馴染ませ15分置く','絞って水気を切る','調味料と白ごまを加えて冷蔵庫で1時間寝かせる']},
+      {id:'easy_s4',name:'無限きゅうり漬け',url:'https://www.youtube.com/watch?v=y4pUO9miJHQ',ing:[['きゅうり','3本'],['醤油','大さじ3'],['酢','大さじ1.5'],['砂糖','大さじ1.5'],['ごま油','大さじ1'],['白ごま','大さじ1'],['にんにく','小さじ1'],['ラー油','お好みで']],steps:['きゅうりを洗って水気を切る','きゅうりを切ってジップロックに入れる','調味料と白ごまを加える','もみ込んで冷蔵庫で30分寝かせる']},
+      {id:'easy_s5',name:'きゅうりのわさび漬け',url:'https://www.youtube.com/watch?v=Bed_tXSDQAQ',ing:[['きゅうり','500g（太め4本・細め5本）'],['塩','大さじ1（約15g）'],['砂糖','大さじ5（約50g）'],['わさびチューブ','大さじ1強（20g、チューブ約1/2本）']],steps:['きゅうりを洗って先端を切り落とす','1cm幅に切る','ジップロックにきゅうりを入れる','調味料を加えてしっかり混ぜ合わせる','空気を抜いて密封し冷蔵庫で6時間寝かせる','水が出てきたら何度か混ぜる','水を切る']},
+      {id:'easy_s7',name:'きゅうり1本漬け',url:'https://www.youtube.com/watch?v=L1tvcI5JTpI',ing:[['きゅうり','4本'],['塩','小さじ1'],['砂糖','小さじ1'],['にんにく','少々'],['ごま油','大さじ1/2']],steps:['きゅうりを洗ってヘタを切り落とす','ピーラーで4箇所皮を剥く','ジップロックに入れて調味料を加える','冷蔵庫で3時間冷やす']},
+      {id:'easy_s8',name:'きゅうりの味噌漬け',url:'https://www.youtube.com/watch?v=YQhiGPdGWo4',ing:[['きゅうり','3本'],['塩','小さじ1/2'],['酒','大さじ1'],['みりん','大さじ1と1/2'],['砂糖','大さじ1'],['味噌','大さじ4'],['鷹の爪','1/2本']],steps:['きゅうりの両端を切り落とす','塩をふって手のひらできゅうりを転がす','塩を水で洗い落とす','キッチンペーパーで水気を切る','ピーラーで2〜3箇所皮を剥く','酒とみりんを合わせてラップなしでレンジ加熱しアルコールを飛ばす','残りの調味料を合わせてよく混ぜる','ジップロックにきゅうり・調味料・お好みで鷹の爪を入れてよく揉む','袋の中の空気を抜く','冷蔵庫で1〜2日寝かせる']},
+    ],
+    '作り置き・副菜':[
+      {id:'easy10',name:'甘辛こんにゃく串',url:'https://www.youtube.com/watch?v=mdO3A5Rm9K8',ing:[['板こんにゃく','1枚（250g）'],['片栗粉','適量'],['醤油','大さじ1'],['みりん','大さじ1'],['酒','大さじ1'],['砂糖','大さじ1/2'],['輪切り唐辛子','適量（お好みで）']],steps:['こんにゃくを細切りにする','こんにゃくを竹串に蛇腹状に刺す（1串に3切れ）','冷凍庫でカチカチになるまで冷やす','ぬるま湯で解凍し、キッチンペーパーで水気を取る','片栗粉を両面に軽くまぶす','フライパンにごま油をひいて加熱する','こんにゃくを焼く','両面焼き色がついたら火を消して調味料を入れる','弱火でタレを煮詰めてこんにゃくに絡める','お好みで輪切り唐辛子をまぶす']},
+      {id:'easy23',name:'小松菜の簡単作り置きレシピ',url:'https://www.youtube.com/watch?v=MKORlwhwPlE',ing:[['小松菜','400g'],['醤油','大さじ1'],['白だし','大さじ1']],steps:['小松菜を洗う','根本を10秒、葉を徐々にお湯に入れる','全部入れたら火を止めて1分待つ','氷水に入れる','水気を切り、食べやすい長さに切る','醤油洗いをして絞る','ボウルに入れ、調味料を加えて混ぜる','もう一度絞る']},
+      {id:'easy27',name:'塩昆布大根',url:'https://www.youtube.com/watch?v=FXBbr8xjv8s',ing:[['大根','1/3本（400g）'],['塩昆布','15g'],['酢','大さじ1'],['水（塩水用）','500ml'],['塩（塩水用）','大さじ1']],steps:['大根を洗い皮付きのまま千切りにする','袋に入れて水と塩を加える','塩が溶けたら20分置く','水気を切って絞る','塩昆布・酢を加えて大根をほぐしながら混ぜる']},
+      {id:'easy28',name:'サバ缶焼き',url:'https://www.youtube.com/watch?v=tRZndfA97lI',ing:[['サバ缶（水煮）','1缶'],['長ねぎ（白い部分）','1本'],['マヨネーズ','小さじ1'],['コショウ','適量'],['片栗粉','大さじ2'],['レモン醤油','適量']],steps:['鯖の身を取り出し袋に入れる','長ネギを乱切りにしながら加える','調味料を加えて身をほぐしながら混ぜる','フライパンに油をひく','種を入れ全体に広げて5分焼く','裏返して2分焼く','レモン醤油で食べる']},
+      {id:'easy29',name:'えのきわかめ',serv:'2〜3人前',url:'https://www.youtube.com/watch?v=tKCBooTbZWQ',ing:[['えのき','1袋（200g）'],['乾燥わかめ','大さじ2'],['水（わかめ用）','大さじ2'],['みりん','大さじ1'],['米酢','大さじ1と1/2'],['醤油','大さじ1'],['ごま','小さじ1'],['ごま油','小さじ1'],['おろし生姜','小さじ1'],['かつお節','1袋（2g）']],steps:['耐熱ボウルにわかめと水を入れる','えのきの根元を切って石づきを取る','わかめの上に切りながら重ねる','みりんをかけラップをして加熱する','全体を混ぜ合わせ、調味料を加える','よく混ぜ合わせて完成']},
+      {id:'easy30',name:'まぶし菜',url:'https://www.youtube.com/watch?v=tnJ5vomUghg',ing:[['小松菜','1袋（200g）'],['しょうゆ','大さじ1/2'],['塩昆布','10g'],['ごま油','小さじ1'],['粗びき黒こしょう','少々'],['※塩昆布なしの場合：塩','1つまみ'],['※塩昆布なしの場合：ごま油','小さじ1'],['※塩昆布なしの場合：粗びき黒こしょう','少々']],steps:['小松菜を3cm幅に切る','葉の部分は向きを変えてカット','根っこの近くは薄くスライス','よく水洗いする','お湯を沸かしている間にザルと穴あきお玉を用意する','沸騰したら火を止めて小松菜を入れて30秒置く','ザルに上げる','醤油洗いをする','冷めたら水気を絞ってボウルに入れる','調味料を入れる']},
+      {id:'easy31',name:'しみしみサバ白菜',serv:'2〜3人前',url:'https://www.youtube.com/watch?v=XLAFbGX24yM',ing:[['白菜','1/4個（400〜500g）'],['サバ水煮缶','1個（190g）'],['生姜','2かけ（20g）'],['酒','大さじ1'],['薄口醤油','小さじ1']],steps:['白菜の上の部分をざく切りにする','下の部分は半分に分け、繊維に沿って1cm幅に切ってから横に向けて3等分にする','よく水洗いする','生姜は皮付きのまま千切りにする','鍋に材料と調味料を入れる','フタをして中火で5分炊く','全体を混ぜ合わせる','再びフタをして弱火で5分炊いて完成']},
+      {id:'easy_s2',name:'茹で鯖',url:'https://www.youtube.com/watch?v=FDYDMU5Wipc',ing:[['塩サバ','適量'],['酒','少々'],['生姜','少々'],['ネギの青い部分','少々']],steps:['水洗いした塩サバに軽く切り込みを入れる','酒を振って10分置く','生姜とネギの青い部分を用意する','鯖をキッチンペーパーで拭いて熱湯へ入れる','生姜とネギも入れて中火で3分茹でる','ネギと生姜を取り出してアクを取る','お好みの具と味噌を入れてみそ汁にしても◎'],note:'※茹で汁にお好みの具を入れてお味噌汁にも使えます。'},
+      {id:'easy_s6',name:'たまご巾着',url:'https://www.youtube.com/watch?v=dWE5tMMmn64',ing:[['油揚げ','2枚'],['卵','4個'],['油','大さじ1'],['砂糖','大さじ2'],['みりん','大さじ2'],['酒','大さじ2'],['しょうゆ','大さじ2']],steps:['油揚げをキッチンペーパーで油を拭き取る','半分に切る','優しく袋を広げて裏返す','お皿に卵を1つずつ割って袋の中に入れる','パスタか爪楊枝で入口を止める','中火で熱したフライパンに油をひく','3〜5分焼く','裏返してさらに3分焼く','調味料を合わせてタレを作る','上からタレをかけ、途中でひっくり返す','タレがとろとろになったら完成']},
+      {id:'easy_s9',name:'簡単じゃがいも煮',url:'https://www.youtube.com/watch?v=PLdElhDCF9M',ing:[['じゃがいも','3個（約450g）'],['サラダ油','大さじ1'],['酒','大さじ1強'],['みりん','大さじ1'],['砂糖','大さじ2'],['めんつゆ（3倍濃縮）','大さじ2'],['水','30〜40cc']],steps:['じゃがいもの皮をむいて一口大に切る','サラダ油をひいた鍋にじゃがいもを入れよく炒める','酒・みりんを入れ沸騰したら砂糖・めんつゆ・水を入れる','フタをして中火で5分煮る','かき混ぜて再度フタをして中火〜弱火で3分煮る','フタを取って中火で絡めるように混ぜて煮詰める','煮汁がなくなったら完成'],note:'※全て目分量なので参考にしてください。味見を適宜しながら調整してください。'},
+      {id:'easy_natto',name:'ふわふわ納豆焼き',url:'https://www.youtube.com/watch?v=fmhOh7gTBkg',ing:[['納豆','1パック'],['付属のタレ','1袋'],['付属のからし','1袋'],['絹豆腐','150g'],['卵','1個'],['片栗粉','大さじ1'],['これ!うま‼︎つゆ','小さじ2'],['塩','1つまみ'],['油','小さじ2'],['醤油','適量'],['小ネギ','適量'],['ラー油','お好みで']],steps:['ボウルに納豆・からし・タレを入れる','卵・豆腐を加える','調味料を加えて混ぜる','フライパンに油をひく','生地を焼く','ひっくり返して焼く']},
+      {id:'easy_ex2',name:'無限蓮根',serv:'2人前',url:'https://www.youtube.com/watch?v=4tvm5oX5zfc',ing:[['レンコン','1節（300g）'],['塩','2つまみ'],['青のり','適量'],['ごま油','大さじ2']],steps:['レンコンは洗って皮をむき、ラップをして500Wで約5分加熱する','食べやすい大きさに切り、ごま油をひいたフライパンで中火で両面4〜5分ずつ焼く','油を切り、塩と青のりを振って混ぜる']},
+      {id:'easy_ex5',name:'もちもち豆腐もち',serv:'2人前',url:'https://www.youtube.com/watch?v=cLxF3VpPtJQ',ing:[['絹ごし豆腐','150g'],['片栗粉','大さじ3'],['青のり','大さじ1'],['鶏がらスープの素','大さじ1/3'],['ごま油','大さじ1']],steps:['ボウルに絹ごし豆腐と調味料をすべて入れてよく混ぜる','油をひいたフライパンを中火にかけ、生地をスプーンで一口大ずつすくって入れる','両面をこんがり焼き、キッチンペーパーで油を切って盛り付ける']},
+      {id:'easy21',name:'じゃがいもバター醤油焼き',url:'https://www.youtube.com/watch?v=XdiYCCT-XmU',ing:[['じゃがいも','3個（約300g）'],['片栗粉','大さじ2'],['油','大さじ2'],['醤油','大さじ1'],['みりん','大さじ1'],['鶏ガラ','小さじ1'],['バター','10g']],steps:['じゃがいもの皮をむき1cm厚に切る','ラップをして4分加熱する','ザルに移して粗熱を取る','ポリ袋に入れて片栗粉を加え、全体に絡むように振る','フライパンに油をひき中火で加熱し、じゃがいもを並べる','約3分焼いて焼き目をつける','裏返して両面焼く','弱火にして調味料を入れ全体に絡ませる','バターを全体に馴染ませる']},
+    ],
+    'スイーツ':[
+      {id:'easy8',name:'レアチョコケーキ',serv:'4人前',url:'https://www.youtube.com/watch?v=EJAcFuopgwM',ing:[['ヨーグルト','400g'],['ココアパウダー','大さじ5〜6'],['はちみつ','大さじ3〜4'],['粉ゼラチン','5g'],['水','大さじ2']],steps:['ヨーグルトを混ぜてなめらかにする','ココアパウダーを加える','はちみつを加える','よく混ぜる','水に粉ゼラチンを加えて軽く混ぜ、レンジで加熱する','溶けたらヨーグルトに流し入れてよく混ぜる','フタをして冷蔵庫で1時間以上冷やす','ココアパウダーを振りかけて完成']},
+      {id:'easy9',name:'レアチーズケーキ',serv:'4人前',url:'https://www.youtube.com/watch?v=ya-W290kyrI',ing:[['ヨーグルト','300g'],['クリームチーズ','100g'],['砂糖','大さじ2〜3'],['冷凍ブルーベリー','60g'],['粉ゼラチン','5g'],['水','大さじ2']],steps:['ヨーグルトをかき混ぜなめらかにする','クリームチーズを混ぜてなめらかにする','チーズにヨーグルトを少量入れて混ぜる','ヨーグルトにチーズを入れて混ぜる','冷凍ブルーベリーに砂糖を加えて軽く混ぜ、電子レンジで加熱する','ブルーベリーを潰しながら軽く混ぜ、粗熱を取ってからヨーグルトに加えてよく混ぜる','水にゼラチンを加えて軽く混ぜ、加熱する','ゼラチンに少量の生地を入れて混ぜる','パックにゼラチンを入れてよく混ぜる','冷蔵庫で1時間冷やし固める']},
+      {id:'easy13',name:'スイートポテト',url:'https://www.youtube.com/watch?v=TXNJMPzxkUQ',ing:[['さつまいも','1個（約350g）'],['砂糖','大さじ2〜3'],['バター','20g'],['牛乳または豆乳','大さじ4'],['黒蜜','お好みで']],steps:['さつまいもの先端を切り、皮を剥く','輪切りにして5分ほど水にさらす','水を切る','ラップをしてレンジで6分半加熱する','フォークやマッシャーで潰す（こすとよりなめらかになる）','砂糖・溶かしバターを加えてよく混ぜる','牛乳を加えてペースト状にする','タッパーにラップやクッキングシートを敷く','さつまいも生地を入れ押し固め、表面を平らに整える','冷蔵庫で1〜2時間冷やす']},
+      {id:'easy18',name:'レンジで3分【いちごのショートケーキ】',url:'https://www.youtube.com/watch?v=eGr7trYLJT0',ing:[['卵（M）','1個'],['砂糖','大さじ1.5〜2'],['牛乳','45ml（大さじ3）'],['油','小さじ1'],['ホットケーキミックス','75g（約大さじ8）'],['絞るだけホイップ','1袋'],['いちご','適量']],steps:['ボウルに卵・砂糖を入れよく混ぜる','牛乳・油・ホットケーキミックスを加えて混ぜる','タッパーにクッキングシートを敷き、生地を流し込んで軽く混ぜる','2〜3回上から落とし、ふんわりラップをしてレンジで3分加熱する','いちごを薄く切る','ケーキの表面が平らになるように切り、半分に切る','タッパーに1枚目のスポンジを敷き、生クリームを絞って平らにならす','スライスしたいちごを並べ、生クリームを少し絞って平らにならす','2枚目のスポンジを敷き、生クリームを絞って平らにならす','いちごをトッピングする']},
+      {id:'easy19',name:'チョコ風味のヨーグルトアイス',serv:'3〜4人前',url:'https://www.youtube.com/watch?v=UHuM9uViUP4',ing:[['ヨーグルト','400g'],['牛乳または豆乳','大さじ6'],['砂糖（またははちみつ）','大さじ4'],['ココアパウダー','大さじ3']],steps:['ヨーグルトに砂糖・ココアパウダー・牛乳を加える','しっかり混ぜる','蓋をして冷凍庫に入れる','1時間半ほどで取り出して全体をかき混ぜる','蓋をして冷凍庫で3時間以上冷やす']},
+      {id:'easy25',name:'健康スイーツ【さつまいもレシピ】',url:'https://www.youtube.com/watch?v=oMfNRmBV7hQ',ing:[['さつまいも','200g'],['片栗粉','大さじ1と1/2'],['牛乳（または豆乳）','大さじ4'],['塩','小さじ1/4']],steps:['さつまいもの先端を切り落として皮をむく','乱切りにして水に5分浸す','耐熱性のポリ袋に入れてレンジで4分半加熱する','綿棒などで叩いて潰し、ボウルに移す','ボウルの端で片栗粉・牛乳・塩を混ぜてさつまいも全体に馴染ませる','深めの耐熱容器にラップを敷き、さつまいもを入れて平らにならす','ふんわりラップをしてレンジで2分加熱する','お皿をかぶせてひっくり返す','もう一度レンジで2分加熱する','粗熱が取れたら切り分ける']},
+      {id:'easy_sw1',name:'きな粉アイス',url:'https://www.youtube.com/watch?v=JqiSAQXS4h8',ing:[['ヨーグルト','400g（1パック）'],['きな粉','大さじ4'],['砂糖','大さじ4'],['牛乳','大さじ4'],['塩','少々'],['黒蜜','お好みで']],steps:['ヨーグルト1パックをかき混ぜる','きな粉・砂糖・牛乳・塩を加えてよく混ぜる','冷凍庫で2〜3時間冷やして、一度かき混ぜる','さらに2〜3時間冷やす']},
+      {id:'easy_sw2',name:'濃厚チーズケーキ',url:'https://www.youtube.com/watch?v=VEMBYTO_L4c',ing:[['ヨーグルト','400g（1パック）'],['クリームチーズ','100g（1箱）'],['砂糖','大さじ2'],['水','大さじ4'],['粉ゼラチン','10g'],['クッキー','適量'],['ブルーベリージャム','適量']],steps:['ヨーグルトを混ぜる','クリームチーズを30秒加熱して混ぜ、ヨーグルトに入れる','砂糖を加えて混ぜる','お皿に水を入れて30秒加熱し、ゼラチン10gを溶かしてヨーグルトに入れる','空気を抜いて冷蔵庫で1時間冷やす','ビスケットを砕いて乗せる','お好みでジャムやソースをかける']},
+      {id:'easy_sw3',name:'コーヒーゼリー',url:'https://www.youtube.com/watch?v=Vbi0m-fHm5w',ing:[['ドリップコーヒー','1袋'],['粉ゼラチン','1袋（5g）'],['牛乳','適量'],['はちみつ・練乳・砂糖など','お好みで']],steps:['タッパーにドリップコーヒーをセットする','ゼラチンをドリップコーヒーに入れ、お湯を注ぐ','粗熱を取り冷蔵庫で3時間以上冷やす','牛乳にお好みの甘みを加えてコーヒーゼリーにかける']},
+      {id:'easy_sw4',name:'豆腐チョコケーキ',url:'https://www.youtube.com/watch?v=7c5HgChM0kQ',ing:[['豆腐','150g'],['砂糖','大さじ1.5'],['ココアパウダー','大さじ2〜3'],['米粉','大さじ2']],steps:['タッパーに豆腐を入れる','砂糖・米粉・ココアパウダーを加えてよく混ぜる','空気を抜いてフタを置き、レンジで30秒加熱する','粗熱が取れたら冷蔵庫で冷やす']},
+      {id:'easy_sw5',name:'ヨーグルト寒天',url:'https://www.youtube.com/watch?v=jOChvxjT_Cw',ing:[['ヨーグルト','400g（1パック）'],['砂糖','大さじ4'],['水','100ml'],['粉寒天','1袋（4g）'],['缶詰または果物','お好みで']],steps:['ヨーグルトをボウルに出して混ぜ、レンジで1分半加熱する','お好みで砂糖を加える','お皿に水・粉寒天を入れて混ぜ、レンジで1分20秒加熱する','缶詰の汁を抜く','加熱した寒天を混ぜてヨーグルトに加える','ヨーグルトをパックに入れて果物を乗せる','粗熱が取れたら冷蔵庫で1時間冷やす']},
+      {id:'easy_sw6',name:'ガトーきな粉',url:'https://www.youtube.com/watch?v=K_vBqISnMMM',ing:[['卵','1個'],['きな粉','大さじ4'],['はちみつ','大さじ2'],['絹ごし豆腐','150g']],steps:['ボウルに卵を入れて溶く','きな粉を加えて混ぜる','はちみつを加えて混ぜる','豆腐をザルでこして加え、よく混ぜる','タッパーにラップを敷き、生地を流し入れる','下から叩いて空気を抜く','レンジで6分半加熱する','お皿にひっくり返して粗熱をとる','冷蔵庫で2時間冷やす']},
+      {id:'easy_sw7',name:'タッパープリン',url:'https://www.youtube.com/watch?v=KL_hv6zmaaU',ing:[['卵','1個'],['砂糖','大さじ1.5'],['豆乳または牛乳','200ml'],['バニラエッセンス','3滴（あれば）'],['砂糖（カラメル用）','大さじ2'],['水（カラメル用）','大さじ2'],['熱湯（カラメル用）','大さじ2']],steps:['ボウルに卵・砂糖・豆乳・バニラエッセンスを入れて混ぜる','ザルでこしながら液をタッパーに入れる','レンジで3分半加熱する','粗熱が取れたら冷蔵庫で3時間以上冷やす','【カラメルソース】フライパンに砂糖・水を入れて中火で加熱する','カラメル色になったら弱火にして熱湯を加えて混ぜ合わせる'],note:'※カラメルソースはマグカップでレンジ加熱すると割れることがあるため、鍋やフライパンで作ることをおすすめします。'},
+      {id:'easy_sw8',name:'ブルーベリーアイス',url:'https://www.youtube.com/watch?v=P1bBajfEac8',ing:[['ヨーグルト','400g（1パック）'],['冷凍ブルーベリー','100g'],['砂糖','大さじ4'],['牛乳','大さじ2'],['ブルーベリージャム','少々（お好みで）']],steps:['お皿に冷凍ブルーベリー・砂糖を入れてレンジで1分半加熱して潰す','牛乳を加えて混ぜる','ヨーグルト1パックをかき混ぜる','ブルーベリーを加えて混ぜる','冷凍庫で2〜3時間冷やしたら一度かき混ぜる','さらに2〜3時間冷やす']},
+    ],
+    'その他':[
+      {id:'easy11',name:'グルテンフリー/米粉パン',url:'https://www.youtube.com/watch?v=Sx8cAHKbvfE',ing:[['米粉（波里お米の粉）','大さじ1（約9g）'],['卵（M）','1個'],['てんさい糖','大さじ1（約9g）'],['水','大さじ1/2（約8ml）']],steps:['クッキングペーパーをくしゃくしゃにしてお椀に敷く','卵黄と卵白に分ける','卵黄に米粉・水を加えて混ぜて生地を作る','卵白にてんさい糖を加えて混ぜメレンゲを作る','メレンゲを少し卵黄に混ぜる','残りのメレンゲを加えて混ぜる','レンジで2分加熱する']},
+      {id:'easy_o1',name:'塩そばめし',serv:'2皿分',url:'https://www.youtube.com/watch?v=-JeBWuAoSpw',ing:[['サッポロ一番しお','1袋'],['鶏ひき肉','100g'],['ごま油','大さじ1/2'],['ごはん','茶碗1杯（冷凍でも可）'],['しょうゆ','小さじ1'],['胡椒','お好みで'],['長ネギ','5〜6cm']],steps:['麺を袋の上から砕く','ネギを小さく切る','フライパンにごま油をひく','鶏ひき肉を炒める','醤油・水・麺を加えて炒める','ご飯・粉末スープを入れて炒める','胡椒・ネギ・ごまをかける'],note:'※粉末スープは薄味が好みなら半量でも。'},
+      {id:'easy_o2',name:'キムチ鍋',url:'https://www.youtube.com/watch?v=0fkUUp3XbYg',ing:[['きのこ（しめじ・えのき・エリンギ）','適量'],['白ねぎ','適量'],['白菜','適量'],['もやし','適量'],['キムチ','適量'],['薄揚げ','適量'],['絹豆腐','適量'],['餃子','適量'],['うどん','適量'],['豚バラ肉','適量'],['鶏もも肉','適量'],['キムチ鍋の素','適量'],['ごま油・ネギ','適量']],steps:['野菜・薄揚げ・豆腐を食べやすい大きさに切る','鍋に食材を入れる','キムチを乗せる','キムチ鍋の素を入れる','火にかける','ごま油・ネギを加えて完成','締めにうどん・ネギを入れる']},
+      {id:'easy_o3',name:'焼きおにぎり',serv:'5個分',url:'https://www.youtube.com/watch?v=UUfB1TnZvsE',ing:[['白米','450g'],['ごま油','大さじ1〜2'],['しょうゆ','大さじ3'],['みりん','大さじ1'],['和風顆粒だし','小さじ1'],['ニンニクおろし','小さじ1/2']],steps:['しょうゆ・みりん・和風顆粒だし・おろしにんにくを混ぜ合わせ、ラップをしてレンジで1分加熱する','ご飯にラップをして3〜4分加熱する','タレを好みの分量かけて混ぜる','少し強めに握る','フライパンにごま油をひく','中火で焼き色がつくまで焼く','全面焼く']},
+      {id:'easy_ex4',name:'冷や汁',serv:'2人分',url:'https://www.youtube.com/watch?v=169tEIXIqHk',ing:[['水','適量'],['味噌','適量'],['さばの水煮缶','1缶'],['木綿豆腐','適量'],['きゅうり','適量'],['大葉','適量'],['みょうが','適量'],['白いりごま','適量'],['塩','適量']],steps:['きゅうりを小口切りにして塩で揉み、みょうがと大葉を水にさらして水気を切る','白いごまを乾煎りしてすり鉢で半ずりにする','味噌と水を混ぜる。さばを缶汁ごと加え、豆腐を崩しながら入れる','薬味を加えて完成']},
+    ]
+  },
+  buy:{
+    '買うだけ（おばあちゃん/家族系）':[
+      {id:'buy0',name:'ベーコンポテトパイ（マクドナルド）',url:'https://www.youtube.com/shorts/zk58grf2Mk8',ing:[],steps:[]},
+      {id:'buy5',name:'モスバーガー',url:'https://www.youtube.com/shorts/mX6pV4Ctd0k',ing:[],steps:[]},
+      {id:'buy10',name:'ケンタッキー',url:'https://www.youtube.com/shorts/qYK5SNICDJo',ing:[],steps:[]},
+      {id:'buy4',name:'コメダ',url:'https://www.youtube.com/watch?v=o9O92xoJdoM',ing:[],steps:[]},
+      {id:'buy6',name:'スターバックス',url:'https://www.youtube.com/shorts/33j0SG4F9O0',ing:[],steps:[]},
+      {id:'buy7',name:'丸亀シェイクうどん',url:'https://www.youtube.com/shorts/Sh9x9gjuoF4',ing:[],steps:[]},
+      {id:'buy9',name:'サーモン（食べ比べ）',url:'https://www.youtube.com/shorts/EtW1Qr5cPKE',ing:[],steps:[]},
+      {id:'buy11',name:'焼き芋',url:'https://www.youtube.com/watch?v=A4W96vJyQps',ing:[],steps:[]},
+      {id:'buy26',name:'ミスタードーナツ',url:'https://www.youtube.com/shorts/q4YWw8BwhJw',ing:[],steps:[]},
+    ],
+    '買うだけ（ソロ系）':[
+      {id:'buy14',name:'ブルダック',url:'https://www.youtube.com/shorts/F3JdQTbd8WU',ing:[],steps:[]},
+      {id:'buy17',name:'サーモン（コストコ）',url:'https://www.youtube.com/shorts/kUbmVqdvSaY',ing:[],steps:[]},
+      {id:'buy12',name:'コストコ購入品',url:'https://www.youtube.com/shorts/Z17U1V5xtP0',ing:[],steps:[]},
+      {id:'buy25',name:'50円ラーメン（イオン）',url:'https://www.youtube.com/shorts/hgc8-TC1sjo',ing:[],steps:[]},
+      {id:'buy18',name:'大盛り牛丼の具（業務スーパー）',url:'https://www.youtube.com/shorts/O_zZqxqdHH8',ing:[],steps:[]},
+      {id:'buy19',name:'タマゴサラダ（業務スーパー）',url:'https://www.youtube.com/shorts/G9JHxhKCz6c',ing:[],steps:[]},
+      {id:'buy20',name:'チャーハン（業務スーパー）',url:'https://www.youtube.com/shorts/KiBbqMMs_G8',ing:[],steps:[]},
+      {id:'buy22',name:'チキンライス（業務スーパー）',url:'https://www.youtube.com/shorts/AGES8gzeExA',ing:[],steps:[]},
+      {id:'buy21',name:'イクラのいらないイクラ丼の素（KALDI）',url:'https://www.youtube.com/shorts/y69TW9LLZs0',ing:[],steps:[]},
+      {id:'buy23',name:'レンジで手羽唐揚げ（KALDI）',url:'https://www.youtube.com/shorts/DBd1JeeOEHI',ing:[],steps:[]},
+      {id:'buy24',name:'ガーリックシュリンク味パスタ（KALDI）',url:'https://www.youtube.com/shorts/-wOjXEIqk50',ing:[],steps:[]},
+    ],
+    '外食（おばあちゃん/家族系）':[
+      {id:'buy_g0',name:'珍来',url:'https://www.youtube.com/watch?v=MjIxCX4VxTo&t=18s',ing:[],steps:[]},
+      {id:'buy_g1',name:'しゃぶせん',url:'https://www.youtube.com/watch?v=vGELkooaw2A',ing:[],steps:[]},
+      {id:'buy_g2',name:'ステーキガスト',url:'https://www.youtube.com/shorts/QFoUinEO-DE',ing:[],steps:[]},
+      {id:'buy_g3',name:'ジョリーパスタ',url:'https://www.youtube.com/shorts/8sF-bJgjaqk',ing:[],steps:[]},
+      {id:'buy_g4',name:'コストコ',url:'https://www.youtube.com/shorts/22NVCF4oEWI',ing:[],steps:[]},
+      {id:'buy_g5',name:'コメダ珈琲',url:'https://www.youtube.com/shorts/f-TM0zotd6k',ing:[],steps:[]},
+      {id:'buy_g6',name:'はま寿司',url:'https://www.youtube.com/watch?v=oKsEelC23Dg',ing:[],steps:[]},
+      {id:'buy_g7',name:'スシロー',url:'https://www.youtube.com/watch?v=p7JDfba-of0',ing:[],steps:[]},
+    ],
+    '外食（ソロ系）':[
+      {id:'buy_g8',name:'丸亀製麺',url:'https://www.youtube.com/watch?v=UXvwpkMayHs',ing:[],steps:[]},
+      {id:'buy_g9',name:'一蘭',url:'https://www.youtube.com/shorts/2a0VAdad5ZM',ing:[],steps:[]},
+      {id:'buy_g10',name:'はなまるうどん',url:'https://www.youtube.com/shorts/QsesUdQ7K_8',ing:[],steps:[]},
+      {id:'buy_g11',name:'すき家',url:'https://www.youtube.com/shorts/tRaRBKU_gRY',ing:[],steps:[]},
+      {id:'buy_g12',name:'天下一品',url:'https://www.youtube.com/shorts/HpN1q7U4SA8',ing:[],steps:[]},
+      {id:'buy_g13',name:'CoCo壱',url:'https://www.youtube.com/shorts/X_uWvkyLUds',ing:[],steps:[]},
+      {id:'buy_g14',name:'山岡家',url:'https://www.youtube.com/watch?v=FmteiykYUSI',ing:[],steps:[]},
+      {id:'buy_g15',name:'餃子の王将',url:'https://www.youtube.com/watch?v=x8MAN6Gny6Q',ing:[],steps:[]},
+      {id:'buy_g16',name:'丸源ラーメン',url:'https://www.youtube.com/watch?v=Wq5KjsAc_G4',ing:[],steps:[]},
+      {id:'buy_g17',name:'鳥貴族',url:'https://www.youtube.com/watch?v=aYLKhnIOIMs',ing:[],steps:[]},
+      {id:'buy_g18',name:'いきなりステーキ',url:'https://www.youtube.com/watch?v=GaU3Zss7oog',ing:[],steps:[]},
+      {id:'buy_g19',name:'サイゼリア',url:'https://www.youtube.com/watch?v=8Cs-Kf0rqxg',ing:[],steps:[]},
+      {id:'buy_g20',name:'びっくりドンキー',url:'https://www.youtube.com/watch?v=XVWKLirq9RM',ing:[],steps:[]},
+      {id:'buy_g21',name:'ガスト',url:'https://www.youtube.com/watch?v=LT2fVCEWmoM',ing:[],steps:[]},
+      {id:'buy_g22',name:'叙々苑',url:'https://www.youtube.com/watch?v=TUnX99n6gCo',ing:[],steps:[]},
+    ],
+  }
+};
+
+let currentTab='pro';
+let openId=null;
+let favIds=new Set(JSON.parse(localStorage.getItem('favIds')||'[]'));
+let favFilter=false;
+
+// 買い物リスト
+let cartItems=[]; // [{recipeName, name, qty}]
+function toggleIngCheck(rid,idx){
+  const li=document.getElementById(`ing-${rid}-${idx}`);
+  if(!li)return;
+  li.classList.toggle('checked');
+  const cb=li.querySelector('.ing-cb');
+  if(cb)cb.checked=li.classList.contains('checked');
+}
+function addToCart(rid,allItems=false){
+  let recipe=null;
+  for(const tab of Object.values(DATA)){
+    for(const items of Object.values(tab)){
+      const found=items.find(r=>r.id===rid);
+      if(found){recipe=found;break;}
+    }
+    if(recipe)break;
+  }
+  if(!recipe)return;
+  let toAdd;
+  if(allItems){
+    toAdd=recipe.ing.map(([n,q])=>({recipeName:recipe.name,name:n,qty:q}));
+  } else {
+    const ul=document.getElementById(`ing-list-${rid}`);
+    const checkedLis=ul?[...ul.querySelectorAll('li.checked')]:[];
+    toAdd=checkedLis.map(li=>{const t=li.querySelector('.ing-name-text');const q=li.querySelector('.ing-qty');return{recipeName:recipe.name,name:t?t.textContent:'',qty:q?q.textContent:''};});
+    if(toAdd.length===0){alert('材料にチェックを入れてください');return;}
+  }
+  if(toAdd.length===0){alert('材料がありません');return;}
+  cartItems=[...cartItems,...toAdd];
+  updateCartFab();
+  showCart();
+}
+function updateCartFab(){
+  const fab=document.getElementById('cart-fab');
+  const cnt=document.getElementById('cart-fab-count');
+  if(!fab)return;
+  fab.style.display=cartItems.length>0?'':'none';
+  if(cnt)cnt.textContent=cartItems.length;
+}
+function showCart(){
+  const overlay=document.getElementById('cart-overlay');
+  const body=document.getElementById('cart-body');
+  overlay.style.display='flex';
+  if(cartItems.length===0){
+    body.innerHTML=`<p style="color:#aaa;text-align:center;padding:20px">リストは空です</p>`;
+    return;
+  }
+  // レシピ別にグループ化
+  const groups={};
+  cartItems.forEach(it=>{
+    if(!groups[it.recipeName])groups[it.recipeName]=[];
+    groups[it.recipeName].push(it);
+  });
+  let html=Object.entries(groups).map(([rname,items])=>`
+    <div style="margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;color:#ff6b2b;margin-bottom:6px;border-left:3px solid #ff6b2b;padding-left:7px">${rname}</div>
+      ${items.map((it,i)=>`<div style="display:flex;justify-content:space-between;padding:7px 4px;border-bottom:1px solid #f0ebe5;font-size:15px">
+        <span>${it.name}</span><span style="color:#999">${it.qty}</span>
+      </div>`).join('')}
+    </div>
+  `).join('');
+  html+=`<button onclick="copyCart()" style="margin-top:12px;width:100%;padding:11px;border:none;border-radius:10px;background:#3b2314;color:#f5e6c8;font-size:14px;font-weight:700;cursor:pointer">📋 テキストをコピー</button>`;
+  html+=`<button onclick="clearCart()" style="margin-top:8px;width:100%;padding:10px;border:1.5px solid #ddd;border-radius:10px;background:#fff;color:#aaa;font-size:13px;cursor:pointer">リストをクリア</button>`;
+  html+=`<span class="random-close" onclick="closeCart()" style="margin-top:8px">とじる</span>`;
+  body.innerHTML=html;
+}
+function closeCart(){document.getElementById('cart-overlay').style.display='none';}
+function clearCart(){cartItems=[];updateCartFab();showCart();}
+function copyCart(){
+  if(cartItems.length===0)return;
+  const groups={};
+  cartItems.forEach(it=>{
+    if(!groups[it.recipeName])groups[it.recipeName]=[];
+    groups[it.recipeName].push(it);
+  });
+  const text=Object.entries(groups).map(([rname,items])=>
+    `【${rname}】\n`+items.map(it=>`・${it.name}${it.qty?' '+it.qty:''}`).join('\n')
+  ).join('\n\n');
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn=document.querySelector('#cart-body button');
+    if(btn){const orig=btn.textContent;btn.textContent='✅ コピーしました！';setTimeout(()=>{btn.textContent=orig;},2000);}
+  }).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    const btn=document.querySelector('#cart-body button');
+    if(btn){const orig=btn.textContent;btn.textContent='✅ コピーしました！';setTimeout(()=>{btn.textContent=orig;},2000);}
+  });
+}
+
+function saveFavs(){
+  try{localStorage.setItem('favIds',JSON.stringify([...favIds]));}catch(e){}
+}
+function toggleFav(id,e){
+  e.stopPropagation();
+  if(favIds.has(id))favIds.delete(id);else favIds.add(id);
+  saveFavs();
+  updateFavBar();
+  render();
+}
+function updateFavBar(){
+  const cnt=document.getElementById('fav-count');
+  const toggle=document.getElementById('fav-toggle');
+  const n=favIds.size;
+  cnt.textContent=n;
+  cnt.style.display=n>0?'':'none';
+  toggle.classList.toggle('active',favFilter);
+}
+function toggleFavFilter(){
+  favFilter=!favFilter;
+  updateFavBar();
+  // 検索中でもお気に入りを表示できるよう検索をリセット
+  const input=document.getElementById('search-input');
+  if(input)input.value='';
+  const mainContent=document.getElementById('main-content');
+  const searchResults=document.getElementById('search-results');
+  const clear=document.getElementById('search-clear');
+  if(mainContent)mainContent.style.display='block';
+  if(searchResults)searchResults.style.display='none';
+  if(clear)clear.style.display='none';
+  render();
+}
+
+/* ランダム */
+function getAllCookable(){
+  const all=[];
+  ['pro','easy'].forEach(tk=>{
+    Object.entries(DATA[tk]).forEach(([cat,recipes])=>{
+      recipes.forEach(r=>all.push({...r,tabKey:tk,subcat:cat}));
+    });
+  });
+  return all;
+}
+function showRandom(){
+  const pool=getAllCookable();
+  if(!pool.length)return;
+  const r=pool[Math.floor(Math.random()*pool.length)];
+  document.getElementById('r-emoji').textContent=getRecipeEmoji(r.name);
+  document.getElementById('r-title').textContent=r.name;
+  document.getElementById('r-cat').textContent=(r.tabKey==='pro'?'本格':'お手軽')+' › '+r.subcat;
+  const ingText=r.ing.length>0?r.ing.map(([n,q])=>`<span style="margin-right:12px">・${n} <span style="color:#aaa">${q}</span></span>`).join(''):'材料情報なし';
+  document.getElementById('r-ing').innerHTML=ingText;
+  const ytBtn=document.getElementById('r-yt-btn');
+  if(r.url){ytBtn.href=r.url;ytBtn.style.display='';}else{ytBtn.style.display='none';}
+  document.getElementById('random-overlay').classList.add('show');
+}
+function closeRandom(){
+  document.getElementById('random-overlay').classList.remove('show');
+}
+
+function switchTab(tab,el){
+  currentTab=tab;openId=null;updateFavBar();
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  const input=document.getElementById('search-input');
+  if(input&&input.value){
+    input.value='';
+    onSearch('');
+  }
+  render();
+}
+
+function toggle(id){
+  const wasOpen=openId===id;
+  const rowEl=document.getElementById('row-'+id);
+  if(wasOpen && rowEl){
+    // DOM直接操作で閉じる
+    rowEl.classList.remove('open');
+    openId=null;
+    document.querySelectorAll('.recipe-row.open').forEach(r=>r.classList.remove('open'));
+    // 閉じた行のタイトルが画面上部に来るようスクロール
+    const stickyH=(document.querySelector('.header')?.offsetHeight||0)+(document.querySelector('.tabs')?.offsetHeight||0);
+    const rowTop=rowEl.getBoundingClientRect().top+window.scrollY;
+    window.scrollTo({top:rowTop-stickyH-8,behavior:'smooth'});
+  } else {
+    // 既存の開きを閉じる
+    document.querySelectorAll('.recipe-row.open').forEach(r=>r.classList.remove('open'));
+    openId=id;
+    if(rowEl) rowEl.classList.add('open');
+    // 検索中の場合は再描DOMを更新
+    const searchInput=document.getElementById('search-input');
+    const q=searchInput?searchInput.value.trim():'';
+    if(q) onSearch(q);
+  }
+}
+
+const EMOJI={
+  '和食':'🍱','丼・ご飯もの':'🍚','パスタ・麺':'🍝','洋食':'🍳','中華':'🥢',
+  '揚げもの・フライ':'🍤','サラダ・副菜':'🥗','おやつ':'🍰',
+  'サラダ':'🥗','作り置き・副菜':'🥦','肉料理':'🥩','タッパー料理':'📦',
+  'スイーツ':'🍮','その他':'🍽️',
+  '買うだけ（おばあちゃん/家族系）':'👨‍👩‍👧','買うだけ（ソロ系）':'🛒','外食（おばあちゃん/家族系）':'🍽️','外食（ソロ系）':'🍜'
+};
+const RECIPE_EMOJI={
+  '卵':'🥚','ご飯':'🍚','肉':'🥩','魚':'🐟','パスタ':'🍝','麺':'🍜',
+  'ケーキ':'🎂','スープ':'🍲','サラダ':'🥗','揚げ':'🍤','カレー':'🍛',
+  'チャーハン':'🍳','鍋':'🫕','丼':'🍜','ラーメン':'🍜','うどん':'🍜',
+  'たこ焼き':'🐙','寿司':'🍣','餃子':'🥟','チキン':'🍗','唐揚げ':'🍗',
+  'ステーキ':'🥩','豚':'🐷','鶏':'🍗','牛':'🥩','海老':'🦐','天ぷら':'🍤',
+  'アイス':'🍦','プリン':'🍮','ケーキ':'🎂','クッキー':'🍪','タルト':'🥧',
+  'コロッケ':'🍘','春巻き':'🥟','豆腐':'🫘','味噌':'🍜','カツ':'🍱'
+};
+function getRecipeEmoji(name){
+  for(const [key,em] of Object.entries(RECIPE_EMOJI)){
+    if(name.includes(key))return em;
+  }
+  return '🍽️';
+}
+function recipeHtml(r){
+  const ytSvg=`<svg viewBox="0 0 10 10"><polygon points="3,2 8,5 3,8"/></svg>`;
+  const isOpen=openId===r.id;
+  const hasUrl=r.url&&r.url.length>0;
+  const emoji=getRecipeEmoji(r.name);
+  const ingHtml=r.ing.length>0
+    ? r.ing.map(([n,q],i)=>`<li id="ing-${r.id}-${i}" onclick="toggleIngCheck('${r.id}',${i})"><input class="ing-cb" type="checkbox" onclick="event.stopPropagation();toggleIngCheck('${r.id}',${i})"><span class="ing-name-text">${n}</span><span class="ing-qty">${q}</span></li>`).join('')
+    : '';
+  const stepHtml=r.steps.length>0
+    ? r.steps.map(s=>`<li>${s}</li>`).join('')
+    : '';
+  return `
+    <div class="recipe-row${isOpen?' open':''}" id="row-${r.id}">
+      <div class="row-header" onclick="toggle('${r.id}')">
+        <div class="row-left">
+          <span class="row-emoji">${emoji}</span>
+          <span class="row-name">${r.name}</span>
+        </div>
+        <div class="row-right">
+          ${hasUrl?`<span class="has-video">${ytSvg}</span>`:''}
+          <button class="fav-btn${favIds.has(r.id)?' active':''}" onclick="toggleFav('${r.id}',event)">${favIds.has(r.id)?'🩷':'🤍'}</button>
+          <span class="arrow">›</span>
+        </div>
+      </div>
+      <div class="detail">
+        ${hasUrl
+          ? `<a class="video-link-btn" href="${r.url}" target="_blank" style="margin-bottom:14px">${ytSvg}YouTube動画を見る</a>`
+          : `<p style="font-size:13px;color:#aaa;margin-bottom:10px">動画リンクは準備中です</p>`
+        }
+        ${ingHtml
+          ? `<div class="section-title">材料${r.serv?'（'+r.serv+'）':''}</div><ul class="ing-list" id="ing-list-${r.id}">${ingHtml}</ul><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="cart-btn" onclick="addToCart('${r.id}',false)" style="flex:1">☑️ チェックした材料を追加</button><button class="cart-btn" onclick="addToCart('${r.id}',true)" style="flex:1">🛒 全て追加</button></div><div class="divider"></div>`
+          : (currentTab !== 'buy' ? `<p class="no-ing">材料は準備中です</p><div class="divider"></div>` : '')
+        }
+        ${stepHtml?`<div class="steps-box"><div class="section-title">作り方</div><ol class="step-list">${stepHtml}</ol></div>`:''}
+        ${r.note?`<div class="yt-memo" style="margin-bottom:10px">${r.note}</div>`:''}
+        <div onclick="toggle('${r.id}')" style="text-align:center;padding:10px 0 2px;cursor:pointer;color:#bbb;font-size:20px;user-select:none">▲</div>
+      </div>
+    </div>
+  `;
+}
+
+function render(){
+  const tab=DATA[currentTab];
+  const list=document.getElementById('recipe-list');
+  const cats=Object.keys(tab);
+  const allEmpty=cats.every(k=>tab[k].length===0);
+  if(allEmpty){
+    list.innerHTML=`<div class="empty-tab">まだレシピがありません</div>`;
+    renderCatNav();
+    return;
+  }
+  if(favFilter){
+    const favRecipes=Object.values(DATA).flatMap(t=>Object.values(t).flatMap(arr=>Array.isArray(arr)?arr.filter(r=>favIds.has(r.id)):[]));
+    if(favRecipes.length===0){
+      list.innerHTML=`<div class="empty-tab">❤️ まだお気に入りがありません<br><span style="font-size:12px;margin-top:8px;display:block">レシピの 🤍 をタップして登録しよう</span></div>`;
+    }else{
+      list.innerHTML=`<div class="subcat-label"><span class="cat-emoji">❤️</span><span class="cat-text">お気に入り</span></div>${favRecipes.map(r=>recipeHtml(r)).join('')}`;
+    }
+    renderCatNav();
+    return;
+  }
+  list.innerHTML=cats.filter(cat=>tab[cat].length>0).map(cat=>`
+    <div class="subcat-label"><span class="cat-emoji">${EMOJI[cat]||'🍽️'}</span><span class="cat-text">${cat}</span></div>
+    ${tab[cat].map(r=>recipeHtml(r)).join('')}
+  `).join('');
+  renderCatNav();
+}
+
+function renderCatNav(){
+  const tab=DATA[currentTab];
+  const nav=document.getElementById('cat-nav');
+  if(!nav)return;
+  const cats=Object.keys(tab).filter(k=>tab[k].length>0);
+  if(cats.length<=1){nav.innerHTML='';return;}
+  nav.innerHTML=cats.map((cat,i)=>
+    `<span class="cat-nav-btn${i===0?' active':''}" onclick="jumpToCat('${cat}',this)">${EMOJI[cat]||'🍽️'} ${cat}</span>`
+  ).join('');
+}
+
+function jumpToCat(cat,btn){
+  document.querySelectorAll('.cat-nav-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const labels=document.querySelectorAll('.subcat-label');
+  for(const label of labels){
+    const catText=label.querySelector('.cat-text');
+    if(catText&&catText.textContent.trim()===cat){
+      label.scrollIntoView({behavior:'smooth',block:'start'});
+      break;
+    }
+  }
+}
+
+render();
+updateFavBar();
+
+function getAllRecipes(){
+  const all=[];
+  const tabKeys=['pro','easy','buy'];
+  const tabLabels={pro:'本格レシピ',easy:'お手軽レシピ',buy:'買うだけ/外食'};
+  const tabBadge={pro:'badge-pro-s',easy:'badge-easy-s',buy:'badge-buy-s'};
+  tabKeys.forEach(tk=>{
+    const tab=DATA[tk];
+    Object.keys(tab).forEach(cat=>{
+      tab[cat].forEach(r=>all.push({...r,tabKey:tk,tabLabel:tabLabels[tk],tabBadge:tabBadge[tk],subcat:cat}));
+    });
+  });
+  return all;
+}
+
+function onSearch(q){
+  const clear=document.getElementById('search-clear');
+  const mainContent=document.getElementById('main-content');
+  const searchResults=document.getElementById('search-results');
+  q=q.trim();
+  if(!q){
+    clear.style.display='none';
+    mainContent.style.display='block';
+    searchResults.style.display='none';
+    return;
+  }
+  clear.style.display='block';
+  mainContent.style.display='none';
+  searchResults.style.display='block';
+  const ytSvg=`<svg viewBox="0 0 10 10"><polygon points="3,2 8,5 3,8"/></svg>`;
+  const all=getAllRecipes();
+  const kw=q.toLowerCase();
+  const matched=all.filter(r=>{
+    const nameMatch=r.name.toLowerCase().includes(kw);
+    const ingMatch=r.ing.some(([n])=>n.toLowerCase().includes(kw));
+    return nameMatch||ingMatch;
+  });
+  const label=document.getElementById('search-result-label');
+  const list=document.getElementById('search-list');
+  if(matched.length===0){
+    label.textContent='';
+    list.innerHTML=`<div class="empty-tab">「${q}」に一致するレシピが見つかりません</div>`;
+    return;
+  }
+  label.innerHTML=`「${q}」の検索結果 <strong>${matched.length}件</strong>`;
+  const ytSvg2=`<svg viewBox="0 0 10 10"><polygon points="3,2 8,5 3,8"/></svg>`;
+  list.innerHTML=matched.map(r=>{
+    const isOpen=openId===r.id;
+    const hasUrl=r.url&&r.url.length>0;
+    const ingHtml=r.ing.length>0
+      ? r.ing.map(([n,q2],i)=>`<li id="ing-${r.id}-${i}" onclick="toggleIngCheck('${r.id}',${i})"><input class="ing-cb" type="checkbox" onclick="event.stopPropagation();toggleIngCheck('${r.id}',${i})"><span class="ing-name-text" ${n.toLowerCase().includes(kw)?'style="background:#fffbe6"':''}>${n}</span><span class="ing-qty">${q2}</span></li>`).join('')
+      : '';
+    const stepHtml=r.steps.length>0?r.steps.map(s=>`<li>${s}</li>`).join(''):'';
+    return `
+      <div class="recipe-row${isOpen?' open':''}" id="row-${r.id}">
+        <div class="row-header" onclick="toggle('${r.id}')">
+          <div class="row-left">
+            <span class="row-name">${r.name}</span>
+            <span class="search-cat-badge ${r.tabBadge}">${r.subcat||r.tabLabel}</span>
+          </div>
+          <div class="row-right">
+            ${hasUrl?`<span class="has-video">${ytSvg2}</span>`:''}
+            <span class="arrow">›</span>
+          </div>
+        </div>
+        <div class="detail">
+          ${hasUrl
+            ?`<a class="video-link-btn" href="${r.url}" target="_blank">${ytSvg2}YouTube動画を見る</a>`
+            :`<p style="font-size:13px;color:#aaa">動画リンクは準備中です</p>`
+          }
+          ${ingHtml
+            ?`<div class="section-title">材料${r.serv?'（'+r.serv+'）':''}</div><ul class="ing-list" id="ing-list-${r.id}">${ingHtml}</ul><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="cart-btn" onclick="addToCart('${r.id}',false)" style="flex:1">☑️ チェックした材料を追加</button><button class="cart-btn" onclick="addToCart('${r.id}',true)" style="flex:1">🛒 全て追加</button></div><div class="divider"></div>`
+            :`<p class="no-ing">材料は準備中です</p><div class="divider"></div>`
+          }
+          ${stepHtml?`<div class="steps-box"><div class="section-title">作り方</div><ol class="step-list">${stepHtml}</ol></div>`:''}
+          <div onclick="toggle('${r.id}')" style="text-align:center;padding:10px 0 2px;cursor:pointer;color:#bbb;font-size:20px;user-select:none">▲</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function clearSearch(){
+  const input=document.getElementById('search-input');
+  input.value='';
+  onSearch('');
+  input.focus();
+}
+</script>
+</body>
+</html>
