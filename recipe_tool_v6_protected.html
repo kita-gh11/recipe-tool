@@ -700,7 +700,7 @@ function recipeHtml(r){
   const hasUrl=r.url&&r.url.length>0;
   const emoji=getRecipeEmoji(r.name);
   const ingHtml=r.ing.length>0
-    ? r.ing.map(([n,q],i)=>`<li id="ing-${r.id}-${i}" onclick="toggleIngCheck('${r.id}',${i})"><input class="ing-cb" type="checkbox" onclick="event.stopPropagation();toggleIngCheck('${r.id}',${i})"><span class="ing-name-text">${n}</span><span class="ing-qty">${q}</span></li>`).join('')
+    ? r.ing.map(([n,q],i)=>`<li id="ing-${r.id}-${i}" onclick="event.stopPropagation();toggleIngCheck('${r.id}',${i})"><input class="ing-cb" type="checkbox" onclick="event.stopPropagation();toggleIngCheck('${r.id}',${i})"><span class="ing-name-text">${n}</span><span class="ing-qty">${q}</span></li>`).join('')
     : '';
   const stepHtml=r.steps.length>0
     ? r.steps.map(s=>`<li>${s}</li>`).join('')
@@ -838,7 +838,7 @@ function onSearch(q){
     const isOpen=openId===r.id;
     const hasUrl=r.url&&r.url.length>0;
     const ingHtml=r.ing.length>0
-      ? r.ing.map(([n,q2],i)=>`<li id="ing-${r.id}-${i}" onclick="toggleIngCheck('${r.id}',${i})"><input class="ing-cb" type="checkbox" onclick="event.stopPropagation();toggleIngCheck('${r.id}',${i})"><span class="ing-name-text" ${n.toLowerCase().includes(kw)?'style="background:#fffbe6"':''}>${n}</span><span class="ing-qty">${q2}</span></li>`).join('')
+      ? r.ing.map(([n,q2],i)=>`<li id="ing-${r.id}-${i}" onclick="event.stopPropagation();toggleIngCheck('${r.id}',${i})"><input class="ing-cb" type="checkbox" onclick="event.stopPropagation();toggleIngCheck('${r.id}',${i})"><span class="ing-name-text" ${n.toLowerCase().includes(kw)?'style="background:#fffbe6"':''}>${n}</span><span class="ing-qty">${q2}</span></li>`).join('')
       : '';
     const stepHtml=r.steps.length>0?r.steps.map(s=>`<li>${s}</li>`).join(''):'';
     return `
