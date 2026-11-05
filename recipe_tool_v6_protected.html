@@ -484,6 +484,7 @@ function addToCart(rid,allItems=false){
   let recipe=null;
   for(const tab of Object.values(DATA)){
     for(const items of Object.values(tab)){
+      if(!Array.isArray(items))continue;
       const found=items.find(r=>r.id===rid);
       if(found){recipe=found;break;}
     }
