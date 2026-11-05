@@ -649,13 +649,19 @@ function toggle(id){
     // 既存の開きを閉じる
     document.querySelectorAll('.recipe-row.open').forEach(r=>r.classList.remove('open'));
     openId=id;
-    if(rowEl){
-      rowEl.classList.add('open');
-    } else {
-      // DOMにない場合（検索結果など）は再描画
-      const searchInput=document.getElementById('search-input');
-      const q=searchInput?searchInput.value.trim():'';
-      if(q) onSearch(q);
+    if(rowEl) rowEl.classList.add('open');
+    // 検索中の場合は再描画（ただしチェック状態を保持）
+    const searchInput=document.getElementById('search-input');
+    const q=searchInput?searchInput.value.trim():'';
+    if(q){
+      // チェック済みのIDを保存
+      const checkedIds=new Set([...document.querySelectorAll('.ing-list li.checked')].map(li=>li.id));
+      onSearch(q);
+      // チェック状態を復元
+      checkedIds.forEach(liId=>{
+        const li=document.getElementById(liId);
+        if(li){li.classList.add('checked');const cb=li.querySelector('.ing-cb');if(cb)cb.checked=true;}
+      });
     }
   }
 }
