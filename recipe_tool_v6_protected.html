@@ -649,11 +649,14 @@ function toggle(id){
     // 既存の開きを閉じる
     document.querySelectorAll('.recipe-row.open').forEach(r=>r.classList.remove('open'));
     openId=id;
-    if(rowEl) rowEl.classList.add('open');
-    // 検索中の場合は再描DOMを更新
-    const searchInput=document.getElementById('search-input');
-    const q=searchInput?searchInput.value.trim():'';
-    if(q) onSearch(q);
+    if(rowEl){
+      rowEl.classList.add('open');
+    } else {
+      // DOMにない場合（検索結果など）は再描画
+      const searchInput=document.getElementById('search-input');
+      const q=searchInput?searchInput.value.trim():'';
+      if(q) onSearch(q);
+    }
   }
 }
 
