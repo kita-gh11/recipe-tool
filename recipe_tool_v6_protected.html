@@ -720,7 +720,7 @@ function recipeHtml(r){
           : `<p style="font-size:13px;color:#aaa;margin-bottom:10px">動画リンクは準備中です</p>`
         }
         ${ingHtml
-          ? `<div class="section-title">材料${r.serv?'（'+r.serv+'）':''}</div><ul class="ing-list" id="ing-list-${r.id}">${ingHtml}</ul><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="cart-btn" onclick="addToCart('${r.id}',false)" style="flex:1">☑️ チェックした材料を追加</button><button class="cart-btn" onclick="addToCart('${r.id}',true)" style="flex:1">🛒 全て追加</button></div><div class="divider"></div>`
+          ? `<div class="section-title">材料${r.serv?'（'+r.serv+'）':''}</div><ul class="ing-list" id="ing-list-${r.id}">${ingHtml}</ul><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="cart-btn" onclick="event.stopPropagation();addToCart('${r.id}',false)" style="flex:1">☑️ チェックした材料を追加</button><button class="cart-btn" onclick="event.stopPropagation();addToCart('${r.id}',true)" style="flex:1">🛒 全て追加</button></div><div class="divider"></div>`
           : (!r.id.startsWith('buy') ? `<p class="no-ing">材料は準備中です</p><div class="divider"></div>` : '')
         }
         ${stepHtml?`<div class="steps-box"><div class="section-title">作り方</div><ol class="step-list">${stepHtml}</ol></div>`:''}
@@ -846,6 +846,7 @@ function onSearch(q){
           </div>
           <div class="row-right">
             ${hasUrl?`<span class="has-video">${ytSvg2}</span>`:''}
+            <button class="fav-btn${favIds.has(r.id)?' active':''}" onclick="event.stopPropagation();toggleFav('${r.id}',event)">${favIds.has(r.id)?'🩷':'🤍'}</button>
             <span class="arrow">›</span>
           </div>
         </div>
@@ -855,7 +856,7 @@ function onSearch(q){
             :`<p style="font-size:13px;color:#aaa">動画リンクは準備中です</p>`
           }
           ${ingHtml
-            ?`<div class="section-title">材料${r.serv?'（'+r.serv+'）':''}</div><ul class="ing-list" id="ing-list-${r.id}">${ingHtml}</ul><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="cart-btn" onclick="addToCart('${r.id}',false)" style="flex:1">☑️ チェックした材料を追加</button><button class="cart-btn" onclick="addToCart('${r.id}',true)" style="flex:1">🛒 全て追加</button></div><div class="divider"></div>`
+            ?`<div class="section-title">材料${r.serv?'（'+r.serv+'）':''}</div><ul class="ing-list" id="ing-list-${r.id}">${ingHtml}</ul><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="cart-btn" onclick="event.stopPropagation();addToCart('${r.id}',false)" style="flex:1">☑️ チェックした材料を追加</button><button class="cart-btn" onclick="event.stopPropagation();addToCart('${r.id}',true)" style="flex:1">🛒 全て追加</button></div><div class="divider"></div>`
             :`<p class="no-ing">材料は準備中です</p><div class="divider"></div>`
           }
           ${stepHtml?`<div class="steps-box"><div class="section-title">作り方</div><ol class="step-list">${stepHtml}</ol></div>`:''}
