@@ -570,6 +570,10 @@ function toggleFav(id,e){
   saveFavs();
   updateFavBar();
   render();
+  // 検索中の場合は検索結果も再描画
+  const searchInput=document.getElementById('search-input');
+  const q=searchInput?searchInput.value.trim():'';
+  if(q) onSearch(q);
 }
 function updateFavBar(){
   const cnt=document.getElementById('fav-count');
